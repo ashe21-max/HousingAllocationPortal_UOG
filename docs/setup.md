@@ -1,7 +1,5 @@
 # Setup
 
-This document describes the required setup and run commands for the ASHU GONDER backend auth system.
-
 ## Stack
 
 - Node.js + TypeScript

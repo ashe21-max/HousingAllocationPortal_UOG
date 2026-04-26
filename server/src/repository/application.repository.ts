@@ -150,7 +150,7 @@ export async function findMyApplications(userId: string) {
 }
 
 export async function findActiveRoundsForLecturer() {
-  return db
+  const rounds = await db
     .select({
       id: applicationRounds.id,
       name: applicationRounds.name,
@@ -161,6 +161,9 @@ export async function findActiveRoundsForLecturer() {
     .from(applicationRounds)
     .where(inArray(applicationRounds.status, ['DRAFT', 'OPEN']))
     .orderBy(desc(applicationRounds.startsAt));
+    
+  console.log('Active rounds found:', rounds);
+  return rounds;
 }
 
 export async function findDepartmentAllocationResults(department: string) {

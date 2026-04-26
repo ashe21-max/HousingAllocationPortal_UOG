@@ -12,12 +12,11 @@ import { requireRole } from '../middleware/require-role.js';
 
 const applicationRouter = Router();
 
-applicationRouter.use(authenticate, requireRole('LECTURER'));
-
-applicationRouter.post('/draft', saveApplicationDraftController);
-applicationRouter.post('/:id/submit', submitApplicationController);
-applicationRouter.get('/me', getMyApplicationsController);
-applicationRouter.get('/options', getApplicationOptionsController);
-applicationRouter.get('/results/department', getMyDepartmentResultsController);
+// Apply authentication only to routes that need it
+applicationRouter.post('/draft', authenticate, requireRole('LECTURER'), saveApplicationDraftController);
+applicationRouter.post('/:id/submit', authenticate, requireRole('LECTURER'), submitApplicationController);
+applicationRouter.get('/me', authenticate, requireRole('LECTURER'), getMyApplicationsController);
+applicationRouter.get('/options', getApplicationOptionsController); // No auth required for options
+applicationRouter.get('/results/department', authenticate, requireRole('LECTURER'), getMyDepartmentResultsController);
 
 export { applicationRouter };

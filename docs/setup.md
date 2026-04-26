@@ -2,6 +2,47 @@
 
 ## Stack
 
+
+
+
+OUR PROJECT = 3-LAYER FULL-STACK SYSTEM
+🔷 1. FRONTEND (Client Layer)
+📁 Folder:
+/client
+✔ What it contains:
+React components (.tsx)
+Pages / routing
+UI logic
+API calls to backend
+🧩 Technologies used in YOUR project:
+React
+TypeScript
+Tailwind CSS
+React Hook Form + Zod
+React Query
+
+🔷 2. BACKEND (Server Layer)
+📁 Folder:
+/server
+✔ What it contains:
+Express server setup
+API routes
+Controllers / logic
+Middleware
+🧩 Technologies used:
+Node.js
+Express.js
+TypeScript
+JWT (authentication)
+bcrypt (password hashing)
+multer (file upload)
+
+🔷 3. DATABASE (Data Layer)
+🧩 Technology:
+PostgreSQL
+🔗 Accessed via:
+Drizzle ORM
+and others  we use 
 - Node.js + TypeScript
 - Express
 - cors
@@ -94,8 +135,8 @@ npm run seed:admin
 
 Seeded admin:
 
-- email: `getabalewkemaw@gmail.com`
-- password: `1234GECH@@`
+- email: `ashenafiyfat.com`
+- password: `Ashu@`
 - role: `ADMIN`
 
 ## Operational Notes

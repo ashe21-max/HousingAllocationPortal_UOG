@@ -70,6 +70,23 @@ The system follows a **three-layer architecture**:
 | **Application**  | nodejs (business logic, rule engine, APIs) |
 | **Data**          | postgers (relational database)                          |
 
+
+
+OUR PROJECT = 3-LAYER FULL-STACK SYSTEM 
+🔷 1. FRONTEND (Client Layer) 📁 Folder: /client ✔ What it contains: React components (.tsx) Pages / routing UI logic API calls to backend 🧩 Technologies used in YOUR project: React TypeScript Tailwind CSS React Hook Form + Zod React Query
+🔷 2. BACKEND (Server Layer) 📁 Folder: /server ✔ What it contains: Express server setup API routes Controllers / logic Middleware 🧩 Technologies used: Node.js Express.js TypeScript JWT (authentication) bcrypt (password hashing) multer (file upload)
+🔷 3. DATABASE (Data Layer) 🧩 Technology: PostgreSQL 🔗 Accessed via: Drizzle ORM and others we use
+
+Node.js + TypeScript
+Express
+cors
+cookie-parser
+PostgreSQL
+Drizzle ORM
+Drizzle Kit
+Brevo email
+JWT authentication
+
 **Development Tools:**  
 - Figma (UI/UX design)
 - Visual Studio Code

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Space_Grotesk } from "next/font/google";
 
 import { AppProviders } from "@/providers/app-providers";
+import { NavigationBar } from "@/components/navigation/navigation-bar";
 
 import "./globals.css";
 
@@ -31,8 +32,19 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${manrope.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
+      <head>
+        {/* Performance optimizations */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <meta name="theme-color" content="#000000" />
+        {/* Preconnect to external domains for faster loading */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      </head>
       <body className="min-h-full">
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <NavigationBar />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

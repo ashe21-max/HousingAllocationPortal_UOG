@@ -161,11 +161,12 @@ export function LoginPanel() {
               {/* Login Options */}
               <div className="grid gap-3">
                 <Button 
-                  onClick={handleInitiateLogin} 
+                  onClick={handleInitiateLogin}
+                  onTouchEnd={handleInitiateLogin}
                   busy={isOtpPending}
                   variant="primary"
                   size="lg"
-                  className="relative overflow-hidden group"
+                  className="relative overflow-hidden group touch-manipulation"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
                     {isOtpPending ? (
@@ -180,10 +181,11 @@ export function LoginPanel() {
 
                 <Button 
                   variant="secondary" 
-                  onClick={handlePasswordLogin} 
+                  onClick={handlePasswordLogin}
+                  onTouchEnd={handlePasswordLogin}
                   busy={isPasswordPending}
                   size="lg"
-                  className="relative overflow-hidden group"
+                  className="relative overflow-hidden group touch-manipulation"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
                     {isPasswordPending ? (

@@ -11,6 +11,7 @@ import { officerRouter } from './officer.routes.js';
 import { scoreRouter } from './score.routes.js';
 import { healthRouter } from './health.routes.js';
 import { settingsRouter } from './settings.routes.js';
+import chatRouter from './chat.routes.js';
 
 const apiRouter = Router();
 
@@ -25,5 +26,6 @@ apiRouter.use('/officer', officerRouter);
 apiRouter.use('/score', scoreRouter);
 apiRouter.use('/health', healthRouter);
 apiRouter.use('/settings', settingsRouter);
+apiRouter.use('/chat', chatRouter);
 
 export { apiRouter };

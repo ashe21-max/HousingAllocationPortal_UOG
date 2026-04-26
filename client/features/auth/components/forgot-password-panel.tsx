@@ -10,7 +10,6 @@ import {
   Lock, 
   MailCheck, 
   ArrowRight,
-  RefreshCw,
   AlertCircle,
   CheckCircle2,
   Loader2,

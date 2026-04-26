@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useState, useRef, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { 
   MessageCircle, 
   Send, 
@@ -12,47 +12,28 @@ import {
   User, 
   HelpCircle, 
   Search,
-  Ticket,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  ThumbsUp,
-  ThumbsDown,
   Phone,
   Mail,
-  MessageSquare,
-  FileText,
-  Zap,
-  Sparkles,
+  MapPin,
+  Clock,
   Users,
-  Calendar,
   ExternalLink,
-  Copy,
-  RefreshCw,
-  Mic,
-  MicOff,
-  Paperclip
+  ThumbsUp,
+  ThumbsDown,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  AlertCircle,
+  CheckCircle,
+  Zap
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ChatMessage {
   id: string;
-  type: 'user' | 'bot' | 'system';
+  type: 'user' | 'ai';
   content: string;
   timestamp: Date;
-  isTyping?: boolean;
-}
-
-interface SupportTicket {
-  id: string;
-  ticketNumber: string;
-  subject: string;
-  description: string;
-  category: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  createdAt: Date;
-  updatedAt: Date;
-  responses: number;
 }
 
 interface FAQItem {
@@ -60,709 +41,585 @@ interface FAQItem {
   question: string;
   answer: string;
   category: string;
-  tags: string[];
-  views: number;
   helpful: number;
-  notHelpful: number;
+  views: number;
 }
 
 export function SupportPanel() {
-  const [activeTab, setActiveTab] = useState<'chat' | 'faq' | 'tickets' | 'contact'>('chat');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  // FAQ Data
-  const [faqs] = useState<FAQItem[]>([
+  const [activeTab, setActiveTab] = useState<'chat' | 'faq' | 'contact'>('chat');
+  const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
-      question: 'How do I apply for housing?',
-      answer: 'To apply for housing, navigate to the Housing Applications section in your dashboard. Click on "New Application" and fill out the required information including your personal details, housing preferences, and supporting documents. Submit the application and wait for committee review.',
-      category: 'applications',
-      tags: ['housing', 'application', 'process'],
-      views: 245,
-      helpful: 189,
-      notHelpful: 12
+      type: 'ai',
+      content: 'Hello! I\'m your AI housing assistant for University of Gondar. I can help you with housing applications, eligibility criteria, document requirements, and allocation processes. How can I assist you today?',
+      timestamp: new Date()
+    }
+  ]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Professional FAQ data
+  const faqs: FAQItem[] = [
+    {
+      id: '1',
+      question: 'How do I apply for housing at University of Gondar?',
+      answer: 'To apply for housing: 1) Login to your dashboard, 2) Navigate to "New Application" in the housing section, 3) Fill out all required personal and academic information, 4) Upload necessary documents (ID, academic certificates, proof of employment), 5) Submit your application and wait for committee review. The process typically takes 2-3 weeks.',
+      category: 'Applications',
+      helpful: 89,
+      views: 245
     },
     {
       id: '2',
-      question: 'What are the eligibility criteria for housing?',
-      answer: 'Eligibility criteria include: 1) Must be a permanent employee of Gondar University, 2) Must have completed probation period, 3) Must not have any disciplinary actions, 4) Must meet the minimum service years requirement based on housing type, 5) Must provide all required documentation.',
-      category: 'eligibility',
-      tags: ['eligibility', 'requirements', 'criteria'],
-      views: 189,
-      helpful: 167,
-      notHelpful: 8
+      question: 'What are the eligibility criteria for housing allocation?',
+      answer: 'Eligibility requirements: 1) Must be a permanent employee of University of Gondar, 2) Must have completed the probation period (minimum 6 months), 3) No disciplinary actions in the last 12 months, 4) Must meet minimum service years based on housing type (Studio: 1 year, 1-Bedroom: 2 years, 2-Bedroom: 3 years), 5) All required documentation must be submitted.',
+      category: 'Eligibility',
+      helpful: 92,
+      views: 189
     },
     {
       id: '3',
-      question: 'How is housing allocation determined?',
-      answer: 'Housing allocation is based on a points system: Educational Title (40%), Service Years (35%), University Responsibility (10%), Family Condition (10%), and Special Conditions (5%). The committee reviews applications and allocates housing based on total points and availability.',
-      category: 'allocation',
-      tags: ['allocation', 'points', 'scoring'],
-      views: 156,
-      helpful: 142,
-      notHelpful: 5
-    }
-  ]);
-
-  // Support Tickets Data
-  const [tickets, setTickets] = useState<SupportTicket[]>([
-    {
-      id: '1',
-      ticketNumber: 'TKT-2024-001',
-      subject: 'Application Status Inquiry',
-      description: 'I would like to check the status of my housing application submitted last month.',
-      category: 'application',
-      priority: 'medium',
-      status: 'in_progress',
-      createdAt: new Date('2024-01-10'),
-      updatedAt: new Date('2024-01-12'),
-      responses: 2
+      question: 'How is the housing allocation scoring system calculated?',
+      answer: 'The allocation scoring system uses weighted criteria: Educational Title (40% - PhD: 40pts, Masters: 30pts, Bachelor: 20pts, Diploma: 10pts), Service Years (35% - 1 year: 5pts, 2-5 years: 15pts, 6-10 years: 25pts, 10+ years: 35pts), University Responsibility (10% - Administrative roles: 10pts, Teaching: 7pts, Support: 5pts), Family Condition (10% - Married with children: 10pts, Married: 7pts, Single: 3pts), Special Conditions (5% - Disability: 5pts, Emergency: 3pts).',
+      category: 'Allocation',
+      helpful: 87,
+      views: 156
     },
     {
-      id: '2',
-      ticketNumber: 'TKT-2024-002',
-      subject: 'Document Upload Issue',
-      description: 'I am unable to upload my academic certificates due to file size limitations.',
-      category: 'technical',
-      priority: 'high',
-      status: 'open',
-      createdAt: new Date('2024-01-15'),
-      updatedAt: new Date('2024-01-15'),
-      responses: 1
+      id: '4',
+      question: 'What documents are required for housing application?',
+      answer: 'Required documents: 1) Valid University ID card, 2) Academic certificates (highest degree), 3) Proof of employment (appointment letter), 4) Marriage certificate (if applicable), 5) Birth certificates of dependents (if applicable), 6) Recent passport-sized photograph, 7) Proof of no disciplinary action from HR, 8) Tax clearance certificate. All documents must be clear, recent, and in PDF format.',
+      category: 'Documents',
+      helpful: 85,
+      views: 134
+    },
+    {
+      id: '5',
+      question: 'How can I check my application status?',
+      answer: 'To check your application status: 1) Login to your dashboard, 2) Go to "My Applications" section, 3) Click on your application to view detailed status, 4) Status updates include: Submitted, Under Review, Committee Evaluation, Approved, Rejected, or Pending Additional Information. You will receive email notifications for any status changes.',
+      category: 'Status',
+      helpful: 91,
+      views: 178
     }
-  ]);
-
-  const [newTicket, setNewTicket] = useState({
-    subject: '',
-    description: '',
-    category: '',
-    priority: 'medium' as const
-  });
+  ];
 
   useEffect(() => {
-    // Initialize chat with welcome message
-    setChatMessages([
-      {
-        id: '1',
-        type: 'bot',
-        content: 'Hello! I\'m your AI assistant. How can I help you today? You can ask me about housing applications, eligibility criteria, or any other questions you might have.',
-        timestamp: new Date()
-      }
-    ]);
-  }, []);
+    scrollToBottom();
+  }, [messages]);
 
-  useEffect(() => {
-    // Auto-scroll to bottom of chat
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
-  const filteredFAQs = faqs.filter(faq => {
-    const matchesSearch = faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  const getLocalResponse = (message: string): string => {
+    const lowerMessage = message.toLowerCase().trim();
+    
+    // Housing applications
+    if (lowerMessage.includes('apply') || lowerMessage.includes('application')) {
+      return 'To apply for housing at University of Gondar: 1) Login to your dashboard, 2) Navigate to "New Application" in the housing section, 3) Fill out all required personal and academic information, 4) Upload necessary documents (ID, academic certificates, proof of employment), 5) Submit your application and wait for committee review. The process typically takes 2-3 weeks.';
+    }
+    
+    // Eligibility criteria
+    if (lowerMessage.includes('eligible') || lowerMessage.includes('criteria') || lowerMessage.includes('requirement')) {
+      return 'Eligibility requirements for University of Gondar housing: 1) Must be a permanent employee of University of Gondar, 2) Must have completed probation period (minimum 6 months), 3) No disciplinary actions in the last 12 months, 4) Must meet minimum service years based on housing type (Studio: 1 year, 1-Bedroom: 2 years, 2-Bedroom: 3 years), 5) All required documentation must be submitted.';
+    }
+    
+    // Documents
+    if (lowerMessage.includes('document') || lowerMessage.includes('paper') || lowerMessage.includes('certificate')) {
+      return 'Required documents for housing application: 1) Valid University ID card, 2) Academic certificates (highest degree), 3) Proof of employment (appointment letter), 4) Marriage certificate (if applicable), 5) Birth certificates of dependents (if applicable), 6) Recent passport-sized photograph, 7) Proof of no disciplinary action from HR, 8) Tax clearance certificate. All documents must be clear, recent, and in PDF format.';
+    }
+    
+    // Status checking
+    if (lowerMessage.includes('status') || lowerMessage.includes('check') || lowerMessage.includes('progress')) {
+      return 'To check your housing application status: 1) Login to your dashboard, 2) Go to "My Applications" section, 3) Click on your application to view detailed status. Status updates include: Submitted, Under Review, Committee Evaluation, Approved, Rejected, or Pending Additional Information. You will receive email notifications for any status changes.';
+    }
+    
+    // Allocation/scoring
+    if (lowerMessage.includes('allocation') || lowerMessage.includes('scoring') || lowerMessage.includes('points')) {
+      return 'Housing allocation scoring system: Educational Title (40% - PhD: 40pts, Masters: 30pts, Bachelor: 20pts, Diploma: 10pts), Service Years (35% - 1 year: 5pts, 2-5 years: 15pts, 6-10 years: 25pts, 10+ years: 35pts), University Responsibility (10% - Administrative roles: 10pts, Teaching: 7pts, Support: 5pts), Family Condition (10% - Married with children: 10pts, Married: 7pts, Single: 3pts), Special Conditions (5% - Disability: 5pts, Emergency: 3pts).';
+    }
+    
+    // Housing types
+    if (lowerMessage.includes('type') || lowerMessage.includes('room') || lowerMessage.includes('studio')) {
+      return 'Available housing types at University of Gondar: Studio apartments (1 year service required), 1-Bedroom apartments (2 years service required), 2-Bedroom apartments (3 years service required). Allocation is based on points system and availability.';
+    }
+    
+    // Contact/help
+    if (lowerMessage.includes('contact') || lowerMessage.includes('help') || lowerMessage.includes('office')) {
+      return 'For housing assistance: Main Office: +251 581 140 000 (Mon-Fri, 8:00 AM - 5:00 PM), Emergency: +251 581 140 001 (24/7), Email: housing@gondar.edu.et (Response within 24 hours), Office Location: Main Campus, Building A, Gondar, Ethiopia.';
+    }
+    
+    // Default response
+    return 'I can help you with housing applications, eligibility criteria, document requirements, application status, allocation processes, and contact information for University of Gondar housing. For specific inquiries about your application, please check your dashboard or contact the housing office at +251 581 140 000.';
+  };
 
-  const handleSendMessage = async () => {
-    if (!currentMessage.trim()) return;
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
-      content: currentMessage,
+      content: inputMessage.trim(),
       timestamp: new Date()
     };
 
-    setChatMessages(prev => [...prev, userMessage]);
-    setCurrentMessage('');
-    setIsTyping(true);
+    setMessages(prev => [...prev, userMessage]);
+    const messageText = inputMessage.trim();
+    setInputMessage('');
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const botResponse: ChatMessage = {
+    try {
+      const response = await fetch("/api/chat/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: messageText,
+        }),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'ai',
+          content: data.data.response,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        throw new Error(data.message || 'Failed to get response');
+      }
+    } catch (error: any) {
+      console.error('Chat error:', error);
+      
+      // Use local fallback if API fails
+      const fallbackResponse = getLocalResponse(messageText);
+      const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: generateAIResponse(currentMessage),
+        type: 'ai',
+        content: fallbackResponse,
         timestamp: new Date()
       };
-      
-      setChatMessages(prev => [...prev, botResponse]);
-      setIsTyping(false);
-    }, 1500);
-  };
-
-  const generateAIResponse = (userMessage: string): string => {
-    const message = userMessage.toLowerCase();
-    
-    if (message.includes('apply') || message.includes('application')) {
-      return 'To apply for housing, go to the Housing Applications section in your dashboard. Click "New Application" and fill out all required fields. Make sure you have all necessary documents ready before starting the application process.';
-    } else if (message.includes('eligible') || message.includes('criteria')) {
-      return 'Eligibility criteria include being a permanent employee, completing probation, having no disciplinary actions, meeting minimum service years, and providing all required documentation.';
-    } else if (message.includes('points') || message.includes('scoring')) {
-      return 'The scoring system is: Educational Title (40%), Service Years (35%), University Responsibility (10%), Family Condition (10%), and Special Conditions (5%). Total points determine housing allocation priority.';
-    } else {
-      return 'I understand you have a question. For specific inquiries about your application, please check your dashboard or contact the Housing Committee directly. For general questions about applications, eligibility, documents, or the allocation process, I\'m here to help.';
+      setMessages(prev => [...prev, aiMessage]);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const filteredFAQs = faqs.filter(faq => 
+    faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleFAQHelpful = (faqId: string, helpful: boolean) => {
-    console.log(`FAQ ${faqId} marked as ${helpful ? 'helpful' : 'not helpful'}`);
-  };
-
-  const handleCreateTicket = () => {
-    if (!newTicket.subject || !newTicket.description || !newTicket.category) {
-      return;
-    }
-
-    const ticket: SupportTicket = {
-      id: Date.now().toString(),
-      ticketNumber: `TKT-${new Date().getFullYear()}-${String(tickets.length + 1).padStart(3, '0')}`,
-      subject: newTicket.subject,
-      description: newTicket.description,
-      category: newTicket.category,
-      priority: newTicket.priority,
-      status: 'open',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      responses: 0
-    };
-
-    setTickets(prev => [ticket, ...prev]);
-    setNewTicket({ subject: '', description: '', category: '', priority: 'medium' });
+    toast.success(helpful ? 'Thank you for your feedback!' : 'Thank you for helping us improve!');
   };
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString();
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return 'bg-blue-100 text-blue-800';
-      case 'in_progress': return 'bg-yellow-100 text-yellow-800';
-      case 'resolved': return 'bg-green-100 text-green-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'low': return 'bg-gray-100 text-gray-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'urgent': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   return (
-    <div className="page-shell">
-      <div className="container animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <Card variant="elevated" className="mb-8">
-          <CardHeader>
+        <div className="mb-8">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-[var(--color-green)] to-[var(--color-green-dark)] rounded-xl flex items-center justify-center">
-                  <HelpCircle className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <HelpCircle className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <CardTitle size="lg" className="text-[var(--foreground)]">Support Center</CardTitle>
-                  <CardDescription>Get help with housing applications, technical issues, and more</CardDescription>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Housing Support Center</h1>
+                  <p className="text-gray-600">Get comprehensive support for University of Gondar housing services</p>
                 </div>
               </div>
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-[var(--foreground)]">24/7</div>
-                  <div className="text-sm text-[var(--foreground-secondary)]">Support Available</div>
+                  <div className="text-2xl font-bold text-green-600">24/7</div>
+                  <div className="text-sm text-gray-500">AI Support Available</div>
                 </div>
-                <div className="relative">
-                  <div className="w-12 h-12 bg-[var(--color-green)]/10 rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 bg-[var(--color-green)] rounded-full animate-pulse" />
-                  </div>
-                  <div className="absolute inset-0 bg-[var(--color-green)]/20 rounded-full animate-ping" />
-                </div>
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               </div>
             </div>
-          </CardHeader>
-        </Card>
+          </div>
+        </div>
 
-        {/* Navigation */}
-        <Card variant="default" className="mb-8">
-          <CardContent className="p-0">
-            <div className="flex flex-wrap gap-2 p-1">
+        {/* Navigation Tabs */}
+        <div className="mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-2 border border-gray-200">
+            <div className="flex gap-2">
               {[
-                { id: 'chat', label: 'AI Chat', icon: MessageCircle, color: 'blue' },
+                { id: 'chat', label: 'AI Assistant', icon: Bot, color: 'blue' },
                 { id: 'faq', label: 'FAQ', icon: HelpCircle, color: 'green' },
-                { id: 'tickets', label: 'Tickets', icon: Ticket, color: 'yellow' },
-                { id: 'contact', label: 'Contact', icon: Phone, color: 'red' },
-              ].map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <Button
-                    key={tab.id}
-                    variant={isActive ? 'primary' : 'ghost'}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`
-                      flex items-center gap-2 px-4 py-2.5 rounded-[var(--radius-lg)]
-                      transition-all duration-[var(--transition-normal)] relative overflow-hidden
-                      ${isActive 
-                        ? 'bg-[var(--color-' + tab.color + ')] text-white shadow-md' 
-                        : 'hover:bg-[var(--color-' + tab.color + ')]/10 hover:text-[var(--color-' + tab.color + ')]'
-                      }
-                    `}
-                  >
-                    <tab.icon className={`w-4 h-4 transition-transform duration-[var(--transition-normal)] ${
-                      isActive ? 'scale-110' : ''
-                    }`} />
-                    <span className="font-medium">{tab.label}</span>
-                    {isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
-                    )}
-                  </Button>
-                );
-              })}
+                { id: 'contact', label: 'Contact', icon: Phone, color: 'purple' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-medium transition-all duration-200 ${
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  <tab.icon className="w-5 h-5" />
+                  <span>{tab.label}</span>
+                </button>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Content */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          {/* AI Chat Tab */}
-          {activeTab === 'chat' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Chat Area */}
-              <div className="lg:col-span-2">
-                <Card className="h-[600px] flex flex-col">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2">
-                      <Bot className="w-5 h-5 text-blue-600" />
-                      AI Assistant
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col p-0">
-                    <div className="flex-1 p-4 overflow-y-auto">
-                      <div className="space-y-4">
-                        {chatMessages.map((message) => (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content Area */}
+          <div className="lg:col-span-2">
+            {/* AI Chat Tab */}
+            {activeTab === 'chat' && (
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+                  <div className="flex items-center gap-3">
+                    <Bot className="w-6 h-6" />
+                    <h2 className="text-xl font-semibold">AI Housing Assistant</h2>
+                    <div className="ml-auto flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span className="text-sm">Online</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="h-[500px] flex flex-col">
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <div className="space-y-4">
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          {message.type === 'ai' && (
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Bot className="w-4 h-4 text-white" />
+                            </div>
+                          )}
                           <div
-                            key={message.id}
-                            className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                            className={`max-w-[80%] rounded-2xl p-4 ${
+                              message.type === 'user'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                                : 'bg-gray-100 text-gray-900 border border-gray-200'
+                            }`}
                           >
-                            {message.type === 'bot' && (
-                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <Bot className="w-4 h-4 text-blue-600" />
-                              </div>
-                            )}
-                            <div
-                              className={`max-w-[70%] rounded-lg p-3 ${
-                                message.type === 'user'
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-100 text-gray-900'
-                              }`}
-                            >
-                              <p className="text-sm">{message.content}</p>
-                              <p className={`text-xs mt-1 ${
-                                message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
-                              }`}>
-                                {formatTime(message.timestamp)}
-                              </p>
-                            </div>
-                            {message.type === 'user' && (
-                              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                <User className="w-4 h-4 text-gray-600" />
-                              </div>
-                            )}
+                            <p className="text-sm leading-relaxed">{message.content}</p>
+                            <p className={`text-xs mt-2 ${
+                              message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
+                            }`}>
+                              {formatTime(message.timestamp)}
+                            </p>
                           </div>
-                        ))}
-                        {isTyping && (
-                          <div className="flex gap-3 justify-start">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Bot className="w-4 h-4 text-blue-600" />
+                          {message.type === 'user' && (
+                            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                              <User className="w-4 h-4 text-gray-600" />
                             </div>
-                            <div className="bg-gray-100 rounded-lg p-3">
+                          )}
+                        </div>
+                      ))}
+                      {isLoading && (
+                        <div className="flex gap-3 justify-start">
+                          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                            <Bot className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="bg-gray-100 rounded-2xl p-4 border border-gray-200">
+                            <div className="flex items-center gap-2">
                               <div className="flex gap-1">
                                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75"></div>
                                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
                               </div>
+                              <span className="text-sm text-gray-600">AI is thinking...</span>
                             </div>
                           </div>
-                        )}
-                        <div ref={chatEndRef} />
-                      </div>
-                    </div>
-                    
-                    {/* Input Area */}
-                    <div className="border-t p-4">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setIsRecording(!isRecording)}
-                          className={isRecording ? 'text-red-600' : ''}
-                        >
-                          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Paperclip className="w-4 h-4" />
-                        </Button>
-                        <div className="flex-1 relative">
-                          <textarea
-                            ref={inputRef}
-                            value={currentMessage}
-                            onChange={(e) => setCurrentMessage(e.target.value)}
-                            placeholder="Type your message..."
-                            className="w-full min-h-[40px] p-2 border rounded-lg resize-none"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendMessage();
-                              }
-                            }}
-                          />
                         </div>
-                        <Button onClick={handleSendMessage} disabled={!currentMessage.trim()}>
-                          <Send className="w-4 h-4" />
-                        </Button>
+                      )}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </div>
+                  
+                  <div className="border-t border-gray-200 p-6">
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Ask about housing applications, eligibility, or any housing-related questions..."
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={isLoading}
+                      />
+                      <button
+                        onClick={sendMessage}
+                        disabled={!inputMessage.trim() || isLoading}
+                        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Send className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* FAQ Tab */}
+            {activeTab === 'faq' && (
+              <div className="space-y-6">
+                {/* Search */}
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      label=""
+                      placeholder="Search frequently asked questions..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-12 py-3 border-gray-300 rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                {/* FAQ Items */}
+                <div className="space-y-4">
+                  {filteredFAQs.map((faq) => (
+                    <div key={faq.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                      <div className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-3">
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                {faq.category}
+                              </Badge>
+                              <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <Users className="w-4 h-4" />
+                                <span>{faq.views} views</span>
+                              </div>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">{faq.question}</h3>
+                            
+                            {expandedFAQ === faq.id && (
+                              <div className="space-y-4">
+                                <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+                                <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
+                                  <button
+                                    onClick={() => handleFAQHelpful(faq.id, true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                                  >
+                                    <ThumbsUp className="w-4 h-4" />
+                                    <span>Helpful ({faq.helpful})</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleFAQHelpful(faq.id, false)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                                  >
+                                    <ThumbsDown className="w-4 h-4" />
+                                    <span>Not Helpful</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <button
+                            onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
+                            className="ml-4 p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                          >
+                            {expandedFAQ === faq.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  ))}
+                </div>
               </div>
+            )}
 
-              {/* Quick Actions */}
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Button variant="ghost" className="w-full justify-start">
-                      <FileText className="w-4 h-4 mr-2" />
-                      Application Guide
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Check Eligibility
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Clock className="w-4 h-4 mr-2" />
-                      Application Status
-                    </Button>
-                  </CardContent>
-                </Card>
+            {/* Contact Tab */}
+            {activeTab === 'contact' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <Phone className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900">Phone Support</h3>
+                      <p className="text-gray-600">Call us for immediate assistance</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="font-medium text-gray-900">Main Office</p>
+                      <p className="text-lg text-blue-600">+251 581 140 000</p>
+                      <p className="text-sm text-gray-600">Monday - Friday, 8:00 AM - 5:00 PM</p>
+                    </div>
+                    <div className="p-4 bg-red-50 rounded-lg">
+                      <p className="font-medium text-red-900">Emergency</p>
+                      <p className="text-lg text-red-600">+251 581 140 001</p>
+                      <p className="text-sm text-red-600">24/7 Available</p>
+                    </div>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Common Topics</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {['How to apply', 'Eligibility criteria', 'Document requirements', 'Application status', 'Housing allocation'].map((topic) => (
-                      <Button
-                        key={topic}
-                        variant="ghost"
-                        className="w-full justify-start text-sm"
-                        onClick={() => setCurrentMessage(topic)}
-                      >
-                        {topic}
-                      </Button>
-                    ))}
-                  </CardContent>
-                </Card>
+                <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                      <Mail className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900">Email Support</h3>
+                      <p className="text-gray-600">Send us detailed inquiries</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="font-medium text-gray-900">General Inquiries</p>
+                      <p className="text-blue-600">housing@gondar.edu.et</p>
+                      <p className="text-sm text-gray-600">Response within 24 hours</p>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="font-medium text-gray-900">Technical Support</p>
+                      <p className="text-blue-600">tech@gondar.edu.et</p>
+                      <p className="text-sm text-gray-600">Response within 12 hours</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200 md:col-span-2">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                      <MapPin className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900">Office Location</h3>
+                      <p className="text-gray-600">Visit us in person</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="font-medium text-gray-900 mb-2">Housing Office</p>
+                      <p className="text-gray-700">Main Campus, Building A</p>
+                      <p className="text-gray-700">Gondar, Ethiopia</p>
+                      <div className="flex items-center gap-2 mt-3 text-sm text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        <span>Mon-Fri: 8:00 AM - 5:00 PM</span>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      <p className="font-medium text-gray-900 mb-2">Emergency Contacts</p>
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="font-medium text-red-600">Campus Security:</span>
+                          <span className="text-gray-700 ml-2">+251 581 140 999</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-red-600">Medical:</span>
+                          <span className="text-gray-700 ml-2">+251 581 140 888</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-red-600">Fire:</span>
+                          <span className="text-gray-700 ml-2">+251 581 140 777</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button className="w-full flex items-center gap-3 px-4 py-3 text-left bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">
+                  <FileText className="w-5 h-5" />
+                  <span>Application Guide</span>
+                </button>
+                <button className="w-full flex items-center gap-3 px-4 py-3 text-left bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
+                  <CheckCircle className="w-5 h-5" />
+                  <span>Check Eligibility</span>
+                </button>
+                <button className="w-full flex items-center gap-3 px-4 py-3 text-left bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>Application Status</span>
+                </button>
               </div>
             </div>
-          )}
 
-          {/* FAQ Tab */}
-          {activeTab === 'faq' && (
-            <div className="space-y-6">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  label="Search FAQs"
-                  placeholder="Search FAQs..."
-                  value={searchQuery}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              {/* FAQ Items */}
-              <div className="space-y-4">
-                {filteredFAQs.map((faq) => (
-                  <Card key={faq.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="secondary">{faq.category}</Badge>
-                            <div className="flex gap-1">
-                              {faq.tags.map((tag) => (
-                                <Badge key={tag} variant="outline" className="text-xs">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                          <h3 className="font-semibold text-lg mb-2">{faq.question}</h3>
-                          
-                          {expandedFAQ === faq.id ? (
-                            <div className="space-y-3">
-                              <p className="text-gray-700">{faq.answer}</p>
-                              <div className="flex items-center gap-4 text-sm text-gray-500">
-                                <span>{faq.views} views</span>
-                                <span>{faq.helpful} found helpful</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleFAQHelpful(faq.id, true)}
-                                >
-                                  <ThumbsUp className="w-4 h-4 mr-1" />
-                                  Helpful
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleFAQHelpful(faq.id, false)}
-                                >
-                                  <ThumbsDown className="w-4 h-4 mr-1" />
-                                  Not Helpful
-                                </Button>
-                              </div>
-                            </div>
-                          ) : null}
-                        </div>
-                        
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
-                        >
-                          {expandedFAQ === faq.id ? 'Show Less' : 'Show More'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+            {/* Common Topics */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Common Topics</h3>
+              <div className="space-y-2">
+                {[
+                  'How to apply for housing',
+                  'Eligibility requirements',
+                  'Document checklist',
+                  'Allocation timeline',
+                  'Housing types available'
+                ].map((topic) => (
+                  <button
+                    key={topic}
+                    onClick={() => setInputMessage(topic)}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    {topic}
+                  </button>
                 ))}
               </div>
             </div>
-          )}
 
-          {/* Tickets Tab */}
-          {activeTab === 'tickets' && (
-            <div className="space-y-6">
-              {/* Create New Ticket */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create New Ticket</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="Subject"
-                      value={newTicket.subject}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTicket(prev => ({ ...prev, subject: e.target.value }))}
-                      placeholder="Brief description of your issue"
-                    />
-                    <Input
-                      label="Category"
-                      value={newTicket.category}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTicket(prev => ({ ...prev, category: e.target.value }))}
-                      placeholder="Select category"
-                    />
-                  </div>
-                  <div className="mt-4">
-                    <Input
-                      label="Description"
-                      value={newTicket.description}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTicket(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Detailed description of your issue..."
-                    />
-                  </div>
-                  <div className="mt-4 flex justify-end">
-                    <Button onClick={handleCreateTicket}>Create Ticket</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Existing Tickets */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Your Tickets</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {tickets.map((ticket) => (
-                      <div key={ticket.id} className="border rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge variant="outline">{ticket.ticketNumber}</Badge>
-                              <Badge className={getPriorityColor(ticket.priority)}>
-                                {ticket.priority}
-                              </Badge>
-                              <Badge className={getStatusColor(ticket.status)}>
-                                {ticket.status}
-                              </Badge>
-                            </div>
-                            <h3 className="font-semibold text-lg mb-1">{ticket.subject}</h3>
-                            <p className="text-gray-600 mb-2">{ticket.description}</p>
-                            <div className="flex items-center gap-4 text-sm text-gray-500">
-                              <span>Created: {formatDate(ticket.createdAt)}</span>
-                              <span>Updated: {formatDate(ticket.updatedAt)}</span>
-                              <span>{ticket.responses} responses</span>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="sm">
-                            View Details
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Support Status */}
+            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+              <div className="flex items-center gap-3 mb-4">
+                <Zap className="w-6 h-6" />
+                <h3 className="text-lg font-semibold">AI Assistant Status</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-100">Status</span>
+                  <span className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-green-300">Online</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-100">Response Time</span>
+                  <span className="text-green-300">&lt; 2 seconds</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-100">Availability</span>
+                  <span className="text-green-300">24/7</span>
+                </div>
+              </div>
             </div>
-          )}
-
-          {/* Contact Tab */}
-          {activeTab === 'contact' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Phone className="w-5 h-5 text-blue-600" />
-                    Phone Support
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="font-medium">Main Office</p>
-                      <p className="text-gray-600">+251 581 140 000</p>
-                      <p className="text-sm text-gray-500">Mon-Fri, 8:00 AM - 5:00 PM</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Emergency</p>
-                      <p className="text-gray-600">+251 581 140 001</p>
-                      <p className="text-sm text-gray-500">24/7 Available</p>
-                    </div>
-                    <Button variant="ghost" className="w-full">
-                      <Phone className="w-4 h-4 mr-2" />
-                      Call Now
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mail className="w-5 h-5 text-blue-600" />
-                    Email Support
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="font-medium">General Inquiries</p>
-                      <p className="text-gray-600">housing@gondar.edu.et</p>
-                      <p className="text-sm text-gray-500">Response within 24 hours</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Technical Support</p>
-                      <p className="text-gray-600">tech@gondar.edu.et</p>
-                      <p className="text-sm text-gray-500">Response within 12 hours</p>
-                    </div>
-                    <Button variant="ghost" className="w-full">
-                      <Mail className="w-4 h-4 mr-2" />
-                      Send Email
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-blue-600" />
-                    Live Chat
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="font-medium">Available Agents</p>
-                      <p className="text-2xl font-bold text-green-600">3 Online</p>
-                      <p className="text-sm text-gray-500">Average wait: 2 minutes</p>
-                    </div>
-                    <Button variant="primary" className="w-full">
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Start Chat
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Office Location</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="font-medium">Housing Office</p>
-                      <p className="text-gray-600">Main Campus, Building A</p>
-                      <p className="text-gray-600">Gondar, Ethiopia</p>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Clock className="w-4 h-4" />
-                      <span>Mon-Fri: 8:00 AM - 5:00 PM</span>
-                    </div>
-                    <Button variant="ghost" className="w-full">
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Get Directions
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Emergency Contacts</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="font-medium text-red-600">Campus Security</p>
-                      <p className="text-gray-600">+251 581 140 999</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-red-600">Medical Emergency</p>
-                      <p className="text-gray-600">+251 581 140 888</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-red-600">Fire Department</p>
-                      <p className="text-gray-600">+251 581 140 777</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

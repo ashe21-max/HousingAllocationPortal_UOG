@@ -1,7 +1,7 @@
 "use client";
 
 import type { ScoreBreakdownLine } from "@/lib/api/scoring";
-import { fmt } from "@/utils/scroing";
+import { fmt } from "@/utils/scoring";
 
 type ApplicationSummaryTableProps = {
   rows: ScoreBreakdownLine[];

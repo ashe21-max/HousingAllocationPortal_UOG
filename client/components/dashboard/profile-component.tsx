@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, LogOut, Edit, Camera, ChevronDown } from 'lucide-react';
+import { User, LogOut, Edit, Camera, ChevronDown, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
@@ -71,6 +71,16 @@ export function ProfileComponent() {
     router.replace("/auth/login");
   };
 
+  const handleRefresh = () => {
+    // Show loading state
+    toast.loading('Refreshing system...');
+    
+    // Force refresh the entire page like professional systems
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
+
   const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -98,38 +108,55 @@ export function ProfileComponent() {
 
   return (
     <>
-      {/* Fixed Top Right Profile */}
-      <div className="fixed top-4 right-4 z-[9999] flex items-center gap-3 bg-white rounded-lg shadow-lg border border-gray-200 px-4 py-2">
-        <span className="text-xs font-bold font-mono uppercase tracking-widest text-gray-600">
+      {/* Minimized Top Right Profile */}
+      <div className="fixed top-0 right-2 z-40 flex flex-col items-center gap-1 bg-white rounded-lg shadow-md border border-gray-200 px-2 py-1.5">
+        {/* Profile Section */}
+        <div className="flex items-center gap-2">
+          {/* Professional Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            className="group relative p-1 rounded hover:bg-gray-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95"
+            title="Refresh System"
+          >
+            <RotateCw 
+              className="h-3 w-3 text-gray-600 group-hover:text-blue-600 transition-colors duration-200 group-hover:rotate-180" 
+              strokeWidth={2}
+            />
+            <div className="absolute inset-0 rounded bg-gradient-to-r from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+          </button>
+          
+          <div className="h-2 w-px bg-gray-300"></div>
+          
+          <Button
+            variant="ghost"
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center gap-1 text-gray-700 hover:text-gray-900 p-0.5"
+          >
+            <div className="flex items-center gap-1">
+              {editForm.profilePicture ? (
+                <img
+                  src={editForm.profilePicture}
+                  alt="Profile"
+                  className="h-4 w-4 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-4 w-4 rounded-full bg-blue-600 flex items-center justify-center">
+                  <User className="h-2 w-2 text-white" />
+                </div>
+              )}
+              <span className="text-xs font-medium hidden sm:block">{editForm.fullName}</span>
+              <ChevronDown className="h-2 w-2" />
+            </div>
+          </Button>
+        </div>
+        
+        {/* Date Below Profile - Very Small and Black */}
+        <span className="text-[8px] font-mono text-black tracking-tight">
           {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
         </span>
-        
-        <div className="h-4 w-px bg-gray-300"></div>
-        
-        <Button
-          variant="ghost"
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 text-gray-700 hover:text-gray-900 p-1"
-        >
-          <div className="flex items-center gap-2">
-            {editForm.profilePicture ? (
-              <img
-                src={editForm.profilePicture}
-                alt="Profile"
-                className="h-6 w-6 rounded-full object-cover"
-              />
-            ) : (
-              <div className="h-6 w-6 rounded-full bg-blue-600 flex items-center justify-center">
-                <User className="h-3 w-3 text-white" />
-              </div>
-            )}
-            <span className="text-sm font-medium hidden sm:block">{editForm.fullName}</span>
-            <ChevronDown className="h-3 w-3" />
-          </div>
-        </Button>
 
         {isOpen && (
-          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999]">
+          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-40">
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
                 {editForm.profilePicture ? (

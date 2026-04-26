@@ -41,11 +41,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
       ref={ref}
       className={`
         inline-flex items-center justify-center 
-        border rounded-[var(--radius-lg] 
+        border rounded-[var(--radius-lg)] 
         font-medium transition-all duration-[var(--transition-normal)]
         focus:outline-none focus:ring-2 focus:ring-[var(--color-blue)] focus:ring-offset-2
         disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none
-        relative overflow-hidden group
+        relative overflow-hidden group touch-manipulation
         ${variantClasses[variant]} 
         ${sizeClasses[size]} 
         ${fullWidth ? 'w-full' : ''}

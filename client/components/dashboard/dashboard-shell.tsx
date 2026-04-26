@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Search } from "lucide-react";
+import { useState } from "react";
+import { Menu, X, Bell, Search } from "lucide-react";
 import { BrandLockup } from "@/components/brand/brand-lockup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,32 +19,52 @@ export function DashboardShell({
   description,
   children,
 }: DashboardShellProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="flex h-screen w-full bg-[var(--background)] text-[var(--foreground)]">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar Component */}
-      <DashboardSidebar />
+      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Top Right Profile */}
       <ProfileComponent />
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden lg:ml-0">
         {/* Header */}
-        <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-[var(--border)] sticky top-0 z-10 shadow-sm">
+        <header className="h-20 flex items-center justify-between px-4 lg:px-8 bg-white border-b border-[var(--border)] sticky top-0 z-30 shadow-sm">
           <div className="flex items-center gap-4 flex-1">
-             <div className="relative w-full max-w-md lg:hidden">
-                <BrandLockup logoSize={32} subtitle="" />
-             </div>
-             <div className="hidden lg:flex relative w-full max-w-md">
-                <Search className="absolute left-3 bottom-3 h-4 w-4 text-muted z-10" />
-                <Input 
-                  label=""
-                  placeholder="Search workspace..." 
-                  className="pl-10 h-11 bg-[var(--surface-muted)] border-none rounded-none focus-visible:ring-1 focus-visible:ring-[var(--border)]"
-                />
-             </div>
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden p-2 hover:bg-gray-100"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+
+            <div className="relative w-full max-w-md lg:hidden">
+              <BrandLockup logoSize={32} subtitle="" />
+            </div>
+            <div className="hidden lg:flex relative w-full max-w-md">
+              <Search className="absolute left-3 bottom-3 h-4 w-4 text-muted z-10" />
+              <Input
+                label=""
+                placeholder="Search workspace..."
+                className="pl-10 h-11 bg-[var(--surface-muted)] border-none rounded-none focus-visible:ring-1 focus-visible:ring-[var(--border)]"
+              />
+            </div>
           </div>
-          
+
           <div className="flex items-center gap-6">
             {/* Notification bell removed */}
           </div>

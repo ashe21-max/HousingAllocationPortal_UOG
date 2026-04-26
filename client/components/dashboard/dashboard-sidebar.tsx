@@ -21,7 +21,8 @@ import {
   Search,
   User,
   ChevronDown,
-  Activity
+  Activity,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,7 +32,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { logout } from "@/lib/api/auth";
 import { getDashboardPath } from "@/lib/auth/redirect-by-role";
 
-export function DashboardSidebar() {
+type DashboardSidebarProps = {
+  isOpen?: boolean;
+  onClose?: () => void;
+};
+
+export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { session, clearSession } = useAuth();
@@ -82,9 +88,26 @@ export function DashboardSidebar() {
   ];
 
   return (
-    <aside className="hidden w-72 flex-col border-r border-[#2a5298] bg-gradient-to-br from-[#f5f7fa] to-[#e9edf2] lg:flex">
+    <aside className={`
+      fixed lg:static top-0 left-0 z-50 h-full w-72 flex-col border-r border-[#2a5298] 
+      bg-gradient-to-br from-[#f5f7fa] to-[#e9edf2] transform transition-transform duration-300 ease-in-out
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+      lg:translate-x-0 lg:flex
+    `}>
+      {/* Mobile Close Button */}
+      <div className="lg:hidden absolute top-4 right-4 z-60">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="p-2 hover:bg-gray-100 rounded-full"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+
       {/* Content */}
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full pt-12 lg:pt-0">
         {/* Header */}
         <div className="h-16 flex items-center px-6 border-b border-[#2a5298] bg-gradient-to-r from-[#1e3c72] via-[#2b4c7c] to-[#2a5298] text-white shadow-lg">
           <BrandLockup logoSize={40} subtitle="" />

@@ -1,7 +1,7 @@
 # 🏠 Web-Based Housing Allocation System for UOG Lecturers
 
 [![React](https://img.shields.io/badge/React-18.x-61DAFB?logo=react)](https://reactjs.org/)
-[![postgeres](https://img.shields.io/badge/MySQL-8.x-4479A1?logo=mysql)](https://www.mysql.com/)
+[![postgresSQL](https://img.shields.io/badge/postgresSQL-8.x-4479A1?logo=postgresSQL)](https://www.postgresSQL.com/)
 
 ## 📌 Overview
 

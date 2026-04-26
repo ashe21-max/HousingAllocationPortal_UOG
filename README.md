@@ -68,7 +68,7 @@ The system follows a **three-layer architecture**:
 | -------------- | ----------------------------------------------------- |
 | **Presentation** | React.js (dynamic, responsive UI)                   |
 | **Application**  | nodejs (business logic, rule engine, APIs) |
-| **Data**          | MySQL (relational database)                          |
+| **Data**          | postgers (relational database)                          |
 
 **Development Tools:**  
 - Figma (UI/UX design)

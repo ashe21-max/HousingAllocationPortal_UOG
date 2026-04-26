@@ -10,7 +10,7 @@ import { requireRole } from '../middleware/require-role.js';
 
 const scoreRouter = Router();
 
-scoreRouter.post('/preview', authenticate, previewScoreController);
+scoreRouter.post('/preview', authenticate, requireRole('LECTURER'), previewScoreController);
 
 scoreRouter.get(
   '/me',

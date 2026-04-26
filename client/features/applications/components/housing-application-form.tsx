@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { calculateCompleteScore } from '@/lib/housing-scoring';
+import { apiRequest } from '@/lib/api/client';
 
 interface ApplicationFormData {
   // Personal Information
@@ -92,44 +93,51 @@ export function HousingApplicationForm() {
   });
 
   const [scoreBreakdown, setScoreBreakdown] = useState<ScoreBreakdown | null>(null);
-  const [activeRounds, setActiveRounds] = useState<ApplicationRound[]>([
-    {
-      id: '2876a748-2b8a-48c8-ab57-ea8aa14a2769',
-      name: '2024 Housing Allocation Round',
-      status: 'OPEN',
-      startsAt: '2026-04-22T20:43:40.700Z',
-      endsAt: '2026-07-22T20:43:40.700Z'
-    }
-  ]);
-  const [selectedRound, setSelectedRound] = useState<string>('2876a748-2b8a-48c8-ab57-ea8aa14a2769');
+  const [activeRounds, setActiveRounds] = useState<ApplicationRound[]>([]);
+  const [selectedRound, setSelectedRound] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [existingApplication, setExistingApplication] = useState<any>(null);
 
   useEffect(() => {
     loadApplicationData();
+    loadActiveRounds();
   }, []);
+
+  const loadActiveRounds = async () => {
+    try {
+      const response = await apiRequest<any>('/applications/options');
+      console.log('Rounds response:', response); // Debug log
+      
+      // Extract rounds from the response object
+      const rounds = response?.rounds || [];
+      setActiveRounds(Array.isArray(rounds) ? rounds : []);
+      if (Array.isArray(rounds) && rounds.length > 0) {
+        setSelectedRound(rounds[0].id);
+      }
+    } catch (error) {
+      console.error('Error loading rounds:', error);
+      setActiveRounds([]); // Ensure it's always an array
+    }
+  };
 
   const loadApplicationData = async () => {
     try {
       // Load existing application
-      const appResponse = await fetch('/api/applications/me');
-      if (appResponse.ok) {
-        const appData = await appResponse.json();
-        if (appData.length > 0) {
-          const latestApp = appData[0];
-          setExistingApplication(latestApp);
-          if (latestApp.roundId) {
-            setSelectedRound(latestApp.roundId);
-          }
-          
-          // Parse notes if it contains form data
-          if (latestApp.notes) {
-            try {
-              const parsedData = JSON.parse(latestApp.notes);
-              setFormData(prev => ({ ...prev, ...parsedData }));
-            } catch (e) {
-              console.log('Could not parse existing application data');
-            }
+      const appData = await apiRequest<any[]>('/applications/me');
+      if (appData && appData.length > 0) {
+        const latestApp = appData[0];
+        setExistingApplication(latestApp);
+        if (latestApp.roundId) {
+          setSelectedRound(latestApp.roundId);
+        }
+        
+        // Parse notes if it contains form data
+        if (latestApp.notes) {
+          try {
+            const parsedData = JSON.parse(latestApp.notes);
+            setFormData(prev => ({ ...prev, ...parsedData }));
+          } catch (e) {
+            console.log('Could not parse existing application data');
           }
         }
       }
@@ -172,12 +180,9 @@ export function HousingApplicationForm() {
       const currentDate = new Date();
       const serviceYears = Math.floor((currentDate.getTime() - startDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
 
-      const response = await fetch('/api/score/save', {
+      await apiRequest('/score/save', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+        body: {
           educationalTitle: formData.educationalTitle,
           educationalLevel: formData.educationalLevel,
           serviceYears: Math.max(0, serviceYears), // Ensure non-negative
@@ -187,15 +192,10 @@ export function HousingApplicationForm() {
           disabilityBonusEligible: formData.isDisabled,
           hivIllnessBonusEligible: formData.hasChronicIllness,
           spouseBonusEligible: formData.hasSpouseAtUog,
-        }),
+        },
       });
 
-      if (response.ok) {
-        toast.success('Score calculated and saved successfully!');
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Failed to save score');
-      }
+      toast.success('Score calculated and saved successfully!');
     } catch (error) {
       console.error('Score save error:', error);
       toast.error('Failed to save score');
@@ -262,33 +262,17 @@ export function HousingApplicationForm() {
         })
       };
 
-      const endpoint = '/api/applications/draft';
-      const response = await fetch(endpoint, {
+      const result = await apiRequest<any>('/applications/draft', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(applicationData),
+        body: applicationData,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save application');
-      }
-
-      const result = await response.json();
       
       if (action === 'submit') {
         // Submit application
-        const submitResponse = await fetch(`/api/applications/${result.id}/submit`, {
+        await apiRequest(`/applications/${result.id}/submit`, {
           method: 'POST'
         });
-        
-        if (submitResponse.ok) {
-          toast.success('Application submitted successfully!');
-        } else {
-          toast.error('Failed to submit application');
-        }
+        toast.success('Application submitted successfully!');
       } else {
         toast.success('Application saved as draft!');
         setExistingApplication(result);
@@ -337,7 +321,7 @@ export function HousingApplicationForm() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select an application round</option>
-                  {activeRounds.map((round) => (
+                  {Array.isArray(activeRounds) && activeRounds.map((round) => (
                     <option key={round.id} value={round.id}>
                       {round.name} ({new Date(round.startsAt).toLocaleDateString()} - {new Date(round.endsAt).toLocaleDateString()}) - {round.status}
                     </option>

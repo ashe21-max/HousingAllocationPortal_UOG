@@ -88,10 +88,7 @@ export async function getApplicationOptionsController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    if (!req.user) {
-      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
-    }
-
+    // Remove authentication requirement for options endpoint
     const options = await getApplicationFormOptions();
     res.status(200).json(options);
   } catch (error) {

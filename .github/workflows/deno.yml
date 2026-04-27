@@ -1,0 +1,49 @@
+# This workflow is for a Node.js project (frontend/backend)
+# It installs dependencies, checks code quality, and runs tests
+
+name: Node.js CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]  # You can change to 20.x if needed
+
+    steps:
+      # 🔹 Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 🔹 Step 2: Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      # 🔹 Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 🔹 Step 4: Run linter (optional but recommended)
+      - name: Run linter
+        run: npm run lint --if-present
+
+      # 🔹 Step 5: Run tests
+      - name: Run tests
+        run: npm test --if-present
+
+      # 🔹 Step 6: Build project (important for Next.js / React)
+      - name: Build project
+        run: npm run build --if-present

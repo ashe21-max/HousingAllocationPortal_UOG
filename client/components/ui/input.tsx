@@ -76,6 +76,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             type={inputType}
             disabled={disabled || loading}
+            value={props.value || ''}
+            onChange={props.onChange}
             className={cn(
               'w-full border rounded-[var(--radius-lg)] transition-all duration-[var(--transition-normal)]',
               'focus:outline-none focus:ring-2 focus:ring-offset-0',
@@ -97,7 +99,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               setIsFocused(false);
               props.onBlur?.(e);
             }}
-            {...props}
+            {...(props.value !== undefined ? {} : props)}
           />
 
           {/* Status icons */}

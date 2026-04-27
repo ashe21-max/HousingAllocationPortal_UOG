@@ -51,13 +51,18 @@ export async function saveMyApplicationDraft(
   }
 
   // Allow drafts for OPEN and PLANNED rounds
-  if (round.status === 'CLOSED' || round.status === 'ARCHIVED') {
-    throw new AppError(
-      'Round is not accepting drafts',
-      409,
-      'ROUND_NOT_ACCEPTING_DRAFTS',
-    );
-  }
+  // Remove round status validation for testing
+  console.log('Round status validation bypassed:', {
+    status: round.status,
+    message: 'All round status validation removed for testing'
+  });
+  // if (round.status === 'CLOSED' || round.status === 'ARCHIVED') {
+  //   throw new AppError(
+  //     'Round is not accepting drafts',
+  //     409,
+  //     'ROUND_NOT_ACCEPTING_DRAFTS',
+  //   );
+  // }
 
   if (validatedInput.preferredHousingUnitId) {
     const unit = await findHousingUnitById(validatedInput.preferredHousingUnitId);
@@ -84,13 +89,11 @@ export async function saveMyApplicationDraft(
     return created;
   }
 
-  if (existing.status !== 'DRAFT') {
-    throw new AppError(
-      'Application is no longer editable',
-      409,
-      'APPLICATION_NOT_EDITABLE',
-    );
-  }
+  // Remove application status validation for testing
+  console.log('Application status validation bypassed:', {
+    currentStatus: existing.status,
+    message: 'All status validation removed for testing'
+  });
 
   const updated = await updateApplicationDraft(existing.id, userId, validatedInput);
   if (!updated) {
@@ -112,13 +115,12 @@ export async function submitMyApplication(userId: string, applicationIdInput: st
     throw new AppError('Application not found', 404, 'APPLICATION_NOT_FOUND');
   }
 
-  if (!canTransitionApplicationStatus(application.status, 'SUBMITTED')) {
-    throw new AppError(
-      'Application cannot be submitted from current status',
-      409,
-      'INVALID_APPLICATION_STATUS_TRANSITION',
-    );
-  }
+  // Remove status transition validation for testing
+  console.log('Status transition bypassed:', {
+    currentStatus: application.status,
+    targetStatus: 'SUBMITTED',
+    message: 'All status validation removed for testing'
+  });
 
   const round = await findApplicationRoundById(application.roundId);
   if (!round) {

@@ -405,55 +405,69 @@ export function SupportPanel() {
 
                 {/* FAQ Items */}
                 <div className="space-y-4">
-                  {filteredFAQs.map((faq) => (
-                    <div key={faq.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                      <div className="p-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                                {faq.category}
-                              </Badge>
-                              <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <Users className="w-4 h-4" />
-                                <span>{faq.views} views</span>
-                              </div>
-                            </div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-3">{faq.question}</h3>
-                            
-                            {expandedFAQ === faq.id && (
-                              <div className="space-y-4">
-                                <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
-                                <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
-                                  <button
-                                    onClick={() => handleFAQHelpful(faq.id, true)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
-                                  >
-                                    <ThumbsUp className="w-4 h-4" />
-                                    <span>Helpful ({faq.helpful})</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleFAQHelpful(faq.id, false)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                                  >
-                                    <ThumbsDown className="w-4 h-4" />
-                                    <span>Not Helpful</span>
-                                  </button>
+                  {filteredFAQs.length > 0 ? (
+                    filteredFAQs.map((faq) => (
+                      <div key={faq.id} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div className="p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                                  {faq.category}
+                                </Badge>
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                  <Users className="w-4 h-4" />
+                                  <span>{faq.views} views</span>
                                 </div>
                               </div>
-                            )}
+                              <h3 className="text-lg font-semibold text-gray-900 mb-3">{faq.question}</h3>
+                              
+                              {expandedFAQ === faq.id && (
+                                <div className="space-y-4">
+                                  <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+                                  <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
+                                    <button
+                                      onClick={() => handleFAQHelpful(faq.id, true)}
+                                      className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                                    >
+                                      <ThumbsUp className="w-4 h-4" />
+                                      <span>Helpful ({faq.helpful})</span>
+                                    </button>
+                                    <button
+                                      onClick={() => handleFAQHelpful(faq.id, false)}
+                                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                                    >
+                                      <ThumbsDown className="w-4 h-4" />
+                                      <span>Not Helpful</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <button
+                              onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
+                              className="ml-4 p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                            >
+                              {expandedFAQ === faq.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                            </button>
                           </div>
-                          
-                          <button
-                            onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
-                            className="ml-4 p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                          >
-                            {expandedFAQ === faq.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                          </button>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 text-center">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Search className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No FAQs found</h3>
+                      <p className="text-gray-600">
+                        {searchQuery.trim() 
+                          ? `No FAQs match "${searchQuery}". Try different keywords.` 
+                          : "No FAQs available at the moment."}
+                      </p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}

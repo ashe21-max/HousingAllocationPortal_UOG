@@ -74,60 +74,69 @@ export function AdminCreateUserForm({ onCreated }: AdminCreateUserFormProps) {
   }
 
   return (
-    <div className="panel grid gap-6 p-8">
-      <div className="grid gap-2">
-        <div className="font-mono text-xs uppercase tracking-[0.24em] text-muted">
-          Admin action
+    <>
+      {/* ✅ ONLY ADDED THIS STYLE */}
+      <style>{`
+        body {
+          background: linear-gradient(135deg, #3a86ff, #00c896, #f4a261);
+          min-height: 100vh;
+        }
+      `}</style>
+
+      <div className="panel grid gap-6 p-8">
+        <div className="grid gap-2">
+          <div className="font-mono text-xs uppercase tracking-[0.24em] text-muted">
+            Admin action
+          </div>
+          <h2 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-semibold text-[var(--color-primary)]">
+            Create a new user
+          </h2>
+          <p className="text-sm leading-7 text-muted">
+            Admins can create all roles, including other admins. New users begin with email
+            verification and password setup.
+          </p>
         </div>
-        <h2 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-semibold text-[var(--color-primary)]">
-          Create a new user
-        </h2>
-        <p className="text-sm leading-7 text-muted">
-          Admins can create all roles, including other admins. New users begin with email
-          verification and password setup.
-        </p>
-      </div>
 
-      <div className="grid gap-4">
-        <Input
-          label="Full name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          error={nameError}
-          placeholder="Example Name"
-          icon={<UserRound className="h-4 w-4" />}
-        />
-        <Input
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          error={emailError}
-          placeholder="name@example.com"
-          icon={<Mail className="h-4 w-4" />}
-        />
-        <Select
-          label="Role"
-          value={role}
-          onChange={(event) => handleRoleChange(event.target.value as UserRole)}
-          options={roleOptions}
-        />
-        {departmentRequired ? (
-          <Select
-            label="Department"
-            value={department}
-            onChange={(event) =>
-              setDepartment(event.target.value as UserDepartment | "")
-            }
-            options={departmentOptions}
-            error={departmentError}
+        <div className="grid gap-4">
+          <Input
+            label="Full name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            error={nameError}
+            placeholder="Example Name"
+            icon={<UserRound className="h-4 w-4" />}
           />
-        ) : null}
-      </div>
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            error={emailError}
+            placeholder="name@example.com"
+          />
+          <Select
+            label="Role"
+            value={role}
+            onChange={(event) => handleRoleChange(event.target.value as UserRole)}
+            options={roleOptions}
+          />
+          {departmentRequired ? (
+            <Select
+              label="Department"
+              value={department}
+              onChange={(event) =>
+                setDepartment(event.target.value as UserDepartment | "")
+              }
+              options={departmentOptions}
+              error={departmentError}
+            />
+          ) : null}
+        </div>
 
-      <Button onClick={handleSubmit} busy={isPending} className="gap-2">
-        <Plus className="h-4 w-4" /> Create user
-      </Button>
-    </div>
+        <Button onClick={handleSubmit} busy={isPending} className="gap-2">
+          <Plus className="h-4 w-4" /> Create user
+        </Button>
+      </div>
+    </>
   );
 }

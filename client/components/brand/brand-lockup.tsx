@@ -32,11 +32,21 @@ function BrandContent({
         .join(" ")}
     >
       <Image
-        src="/logo.png"
+        src="/ashuman.png"
         alt="University of Gondar logo"
-        width={logoSize}
-        height={logoSize}
-        className="shrink-0 rounded-none border border-[rgba(61,52,78,0.12)] bg-white object-contain"
+        width={logoSize * 4} // Increased horizontal size
+        height={logoSize * 2.5} // Increased vertical size
+        className="shrink-0 object-contain"
+        style={{
+          width: "auto", // Maintain aspect ratio
+          height: "auto", // Maintain aspect ratio
+          maxWidth: `${logoSize * 4}px`, // Horizontal expansion
+          maxHeight: `${logoSize * 2.5}px`, // Vertical expansion
+          padding: 0,
+          margin: 0,
+          border: "none",
+          background: "transparent"
+        }}
         priority
       />
       <div className={["grid gap-1", textClassName ?? ""].filter(Boolean).join(" ")}>

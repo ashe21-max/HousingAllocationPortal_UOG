@@ -9,7 +9,7 @@ import { DashboardSidebar } from "./dashboard-sidebar";
 import { ProfileComponent } from "./profile-component";
 
 type DashboardShellProps = {
-  title: string;
+  title: string | React.ReactNode;
   description: string;
   children: React.ReactNode;
 };
@@ -20,6 +20,7 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <div className="flex h-screen w-full bg-[var(--background)] text-[var(--foreground)]">
@@ -60,6 +61,8 @@ export function DashboardShell({
               <Input
                 label=""
                 placeholder="Search workspace..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 h-11 bg-[var(--surface-muted)] border-none rounded-none focus-visible:ring-1 focus-visible:ring-[var(--border)]"
               />
             </div>

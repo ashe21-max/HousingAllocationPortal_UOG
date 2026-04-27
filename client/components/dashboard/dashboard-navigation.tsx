@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { 
@@ -83,6 +84,12 @@ interface DashboardNavigationProps {
 
 export function DashboardNavigation({ user }: DashboardNavigationProps) {
   const pathname = usePathname();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter navigation items based on search query
+  const filteredNavigation = navigation.filter((item) =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -103,7 +110,9 @@ export function DashboardNavigation({ user }: DashboardNavigationProps) {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search navigation..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -111,24 +120,38 @@ export function DashboardNavigation({ user }: DashboardNavigationProps) {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
-                isActive
-                  ? "bg-blue-100 text-blue-700"
-                  : "text-gray-700 hover:bg-gray-100"
-              )}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.name}
-            </Link>
-          );
-        })}
+        {filteredNavigation.length > 0 ? (
+          filteredNavigation.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                  isActive
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-700 hover:bg-gray-100"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.name}
+              </Link>
+            );
+          })
+        ) : (
+          <div className="text-center py-4">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+              <Search className="w-6 h-6 text-gray-400" />
+            </div>
+            <p className="text-sm text-gray-500">No navigation items found</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {searchQuery.trim() 
+                ? `No items match "${searchQuery}"` 
+                : "Try searching for navigation items"}
+            </p>
+          </div>
+        )}
       </nav>
 
       {/* User Profile */}

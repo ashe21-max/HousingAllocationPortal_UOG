@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import { 
   LayoutDashboard, 
   LogOut,
@@ -41,6 +42,7 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
   const pathname = usePathname();
   const router = useRouter();
   const { session, clearSession } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
 
 
   const navigation = [
@@ -61,7 +63,6 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
       ? [
           { name: "New Application", href: "/dashboard/lecturer/application", icon: FileText },
           { name: "My Applications", href: "/dashboard/lecturer/my-applications", icon: FileText },
-          { name: "Upload Documents", href: "/dashboard/lecturer/documents", icon: FileText },
           { name: "View Results", href: "/dashboard/lecturer/results", icon: FileText },
           { name: "File Complaint", href: "/dashboard/lecturer/complaints", icon: FileText },
           { name: "Settings", href: "/dashboard/lecturer/settings", icon: Settings },
@@ -120,7 +121,9 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b] transition-all duration-300 group-hover:text-[#1e3c72] group-hover:scale-110 z-10" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search navigation..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 text-sm bg-[#ffffff] border border-[#cbd5e1] rounded-xl 
                        focus:outline-none focus:border-[#2a5298] focus:bg-[#ffffff] 
                        focus:ring-2 focus:ring-[#2a5298]/30 transition-all duration-300 shadow-sm hover:shadow-md
@@ -132,7 +135,29 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto">
           <nav className="flex flex-col gap-1">
-              {navigation.map((item, index) => {
+              {(() => {
+                // Filter navigation items based on search query
+                const filteredNavigation = navigation.filter((item) =>
+                  item.name.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+                
+                if (filteredNavigation.length === 0) {
+                  return (
+                    <div className="text-center py-8 px-4">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Search className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <p className="text-sm text-gray-500">No navigation items found</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {searchQuery.trim() 
+                          ? `No items match "${searchQuery}"` 
+                          : "Try searching for navigation items"}
+                      </p>
+                    </div>
+                  );
+                }
+                
+                return filteredNavigation.map((item, index) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link key={item.name} href={item.href}>
@@ -193,7 +218,8 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
                   </div>
                 </Link>
               );
-            })}
+                });
+              })()}
             </nav>
         </div>
 

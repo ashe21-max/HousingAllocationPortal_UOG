@@ -9,7 +9,7 @@ export default function LecturerSupportPage() {
         title="Support"
         description="Get help with housing applications, technical issues, and more"
       >
-        <SupportPanel />
+        <SupportPanel role="LECTURER" />
       </DashboardShell>
     </DashboardGate>
   );

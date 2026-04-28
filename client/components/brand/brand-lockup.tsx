@@ -34,18 +34,14 @@ function BrandContent({
       <Image
         src="/ashuman.png"
         alt="University of Gondar logo"
-        width={logoSize * 4} // Increased horizontal size
-        height={logoSize * 2.5} // Increased vertical size
-        className="shrink-0 object-contain"
+        width={logoSize * 4}
+        height={logoSize * 2.5}
+        className="object-contain flex-shrink-0"
         style={{
-          width: "auto", // Maintain aspect ratio
-          height: "auto", // Maintain aspect ratio
-          maxWidth: `${logoSize * 4}px`, // Horizontal expansion
-          maxHeight: `${logoSize * 2.5}px`, // Vertical expansion
-          padding: 0,
-          margin: 0,
-          border: "none",
-          background: "transparent"
+          width: `${logoSize * 4}px`,
+          height: `${logoSize * 2.5}px`,
+          maxWidth: '100%',
+          maxHeight: '100%'
         }}
         priority
       />

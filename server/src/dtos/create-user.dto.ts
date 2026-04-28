@@ -5,10 +5,13 @@ export type UserDepartment =
   | 'College of Business and Economics'
   | 'College of Natural and Computational Sciences'
   | 'College of Social Sciences and Humanities'
-  | 'College of Veterinary Medicine and Animal Sciences'
   | 'College of Agriculture and Environmental Sciences'
+  | 'College of Veterinary Medicine and Animal Sciences'
   | 'College of Education'
-  | 'College of Informatics';
+  | 'College of Informatics'
+  | 'Institute of Technology'
+  | 'Institute of Biotechnology'
+  | 'School of Law';
 
 export type CreateUserDto = {
   name: string;

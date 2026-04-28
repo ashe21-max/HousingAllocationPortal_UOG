@@ -15,6 +15,7 @@ import {
 } from "@/constants/user";
 import { ApiError } from "@/lib/api/client";
 import {
+  deleteAdminUser,
   getAdminUsers,
   setAdminUserStatus,
   updateAdminUser,
@@ -36,6 +37,7 @@ export function AdminUserManagementPanel() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRole | "">("");
   const [activeFilter, setActiveFilter] = useState<"all" | "true" | "false">("all");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const usersQuery = useQuery({
     queryKey: ["admin-users", page, pageSize, search, roleFilter, activeFilter],
@@ -84,6 +86,22 @@ export function AdminUserManagementPanel() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteAdminUser(id),
+    onSuccess: (data) => {
+      console.log("Delete successful:", data);
+      toast.success("User deleted successfully.");
+      setDeleteConfirmId(null);
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (error) => {
+      console.error("Delete error:", error);
+      const message =
+        error instanceof ApiError ? error.message : "Could not delete user.";
+      toast.error(message);
+    },
+  });
+
   function beginEdit(user: AdminUser) {
     setEditingId(user.id);
     setEditName(user.name);
@@ -94,6 +112,18 @@ export function AdminUserManagementPanel() {
 
   function cancelEdit() {
     setEditingId(null);
+  }
+
+  function confirmDelete(id: string) {
+    setDeleteConfirmId(id);
+  }
+
+  function cancelDelete() {
+    setDeleteConfirmId(null);
+  }
+
+  function handleDelete(id: string) {
+    deleteMutation.mutate(id);
   }
 
   function saveEdit() {
@@ -235,6 +265,33 @@ export function AdminUserManagementPanel() {
                     >
                       {user.isActive ? "Deactivate" : "Activate"}
                     </Button>
+                    {deleteConfirmId === user.id ? (
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          busy={deleteMutation.isPending}
+                          onClick={() => handleDelete(user.id)}
+                        >
+                          Confirm
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={cancelDelete}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => confirmDelete(user.id)}
+                      >
+                        Delete
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}

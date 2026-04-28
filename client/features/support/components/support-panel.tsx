@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
-  MessageCircle, 
   Send, 
   Bot, 
   User, 
@@ -17,15 +17,17 @@ import {
   MapPin,
   Clock,
   Users,
-  ExternalLink,
   ThumbsUp,
   ThumbsDown,
   ChevronDown,
   ChevronUp,
   FileText,
-  AlertCircle,
   CheckCircle,
-  Zap
+  AlertCircle,
+  Zap,
+  Facebook,
+  Youtube,
+  Globe
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,17 +43,27 @@ interface FAQItem {
   question: string;
   answer: string;
   category: string;
-  helpful: number;
-  views: number;
 }
 
-export function SupportPanel() {
+interface SupportPanelProps {
+  role?: 'LECTURER' | 'OFFICER' | 'COMMITTEE' | 'ADMIN';
+}
+
+export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
   const [activeTab, setActiveTab] = useState<'chat' | 'faq' | 'contact'>('chat');
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       type: 'ai',
-      content: 'Hello! I\'m your AI housing assistant for University of Gondar. I can help you with housing applications, eligibility criteria, document requirements, and allocation processes. How can I assist you today?',
+      content: role === 'LECTURER' 
+        ? 'Hello! I\'m your AI housing assistant for University of Gondar lecturers. I can help you with housing applications, eligibility criteria, document requirements, and application status tracking. How can I assist you today?'
+        : role === 'OFFICER'
+        ? 'Hello! I\'m your AI housing assistant for University of Gondar housing officers. I can help you with housing unit management, application processing, allocation decisions, and availability updates. How can I assist you today?'
+        : role === 'COMMITTEE'
+        ? 'Hello! I\'m your AI housing assistant for University of Gondar committee members. I can help you with application reviews, scoring criteria, committee meetings, and allocation decisions. How can I assist you today?'
+        : role === 'ADMIN'
+        ? 'Hello! I\'m your AI housing assistant for University of Gondar administrators. I can help you with system administration, user management, report generation, and system settings. How can I assist you today?'
+        : 'Hello! I\'m your AI housing assistant for University of Gondar. How can I assist you today?',
       timestamp: new Date()
     }
   ]);
@@ -61,49 +73,102 @@ export function SupportPanel() {
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Professional FAQ data
-  const faqs: FAQItem[] = [
-    {
-      id: '1',
-      question: 'How do I apply for housing at University of Gondar?',
-      answer: 'To apply for housing: 1) Login to your dashboard, 2) Navigate to "New Application" in the housing section, 3) Fill out all required personal and academic information, 4) Upload necessary documents (ID, academic certificates, proof of employment), 5) Submit your application and wait for committee review. The process typically takes 2-3 weeks.',
-      category: 'Applications',
-      helpful: 89,
-      views: 245
-    },
-    {
-      id: '2',
-      question: 'What are the eligibility criteria for housing allocation?',
-      answer: 'Eligibility requirements: 1) Must be a permanent employee of University of Gondar, 2) Must have completed the probation period (minimum 6 months), 3) No disciplinary actions in the last 12 months, 4) Must meet minimum service years based on housing type (Studio: 1 year, 1-Bedroom: 2 years, 2-Bedroom: 3 years), 5) All required documentation must be submitted.',
-      category: 'Eligibility',
-      helpful: 92,
-      views: 189
-    },
-    {
-      id: '3',
-      question: 'How is the housing allocation scoring system calculated?',
-      answer: 'The allocation scoring system uses weighted criteria: Educational Title (40% - PhD: 40pts, Masters: 30pts, Bachelor: 20pts, Diploma: 10pts), Service Years (35% - 1 year: 5pts, 2-5 years: 15pts, 6-10 years: 25pts, 10+ years: 35pts), University Responsibility (10% - Administrative roles: 10pts, Teaching: 7pts, Support: 5pts), Family Condition (10% - Married with children: 10pts, Married: 7pts, Single: 3pts), Special Conditions (5% - Disability: 5pts, Emergency: 3pts).',
-      category: 'Allocation',
-      helpful: 87,
-      views: 156
-    },
-    {
-      id: '4',
-      question: 'What documents are required for housing application?',
-      answer: 'Required documents: 1) Valid University ID card, 2) Academic certificates (highest degree), 3) Proof of employment (appointment letter), 4) Marriage certificate (if applicable), 5) Birth certificates of dependents (if applicable), 6) Recent passport-sized photograph, 7) Proof of no disciplinary action from HR, 8) Tax clearance certificate. All documents must be clear, recent, and in PDF format.',
-      category: 'Documents',
-      helpful: 85,
-      views: 134
-    },
-    {
-      id: '5',
-      question: 'How can I check my application status?',
-      answer: 'To check your application status: 1) Login to your dashboard, 2) Go to "My Applications" section, 3) Click on your application to view detailed status, 4) Status updates include: Submitted, Under Review, Committee Evaluation, Approved, Rejected, or Pending Additional Information. You will receive email notifications for any status changes.',
-      category: 'Status',
-      helpful: 91,
-      views: 178
-    }
-  ];
+  const roleLabelMap = {
+    LECTURER: 'Lecturer',
+    OFFICER: 'Officer',
+    COMMITTEE: 'Committee',
+    ADMIN: 'Admin'
+  } as const;
+
+  const roleDescriptionMap = {
+    LECTURER: 'Get support for housing applications, documents, status checks, and campus housing policies.',
+    OFFICER: 'Get support for housing unit management, allocations, availability updates, and operations.',
+    COMMITTEE: 'Get support for application review, scoring, committee assignments, and allocation decisions.',
+    ADMIN: 'Get support for system administration, user management, housing policies, and admin workflows.'
+  } as const;
+
+  const faqsByRole: Record<string, FAQItem[]> = {
+    LECTURER: [
+      {
+        id: '1',
+        question: 'How do I apply for housing at University of Gondar?',
+        answer: 'Login to your dashboard, go to the housing section, start a new application, fill in your details, upload required documents, and submit. You can track the status from the same dashboard page.',
+        category: 'Applications'
+      },
+      {
+        id: '2',
+        question: 'What documents do I need for my housing application?',
+        answer: 'Required documents include your University ID, appointment letter, academic certificate, proof of relationship if applicable, and any supporting medical or special condition documents.',
+        category: 'Documents'
+      },
+      {
+        id: '3',
+        question: 'How can I check my application status?',
+        answer: 'Open your dashboard and navigate to "My Applications" to view your current application status. You can see real-time updates on your application progress, from submission to committee review to final decision.',
+        category: 'Applications'
+      }
+    ],
+    OFFICER: [
+      {
+        id: '1',
+        question: 'How do I manage housing unit allocations?',
+        answer: 'Access your dashboard, go to "Housing Allocations" section, view available units, review applicant eligibility scores, and make allocation decisions based on priority and availability.',
+        category: 'Allocations'
+      },
+      {
+        id: '2',
+        question: 'What are my responsibilities as a housing officer?',
+        answer: 'As a housing officer, you are responsible for reviewing applications, managing allocations, maintaining housing unit records, handling tenant requests, and ensuring compliance with university housing policies.',
+        category: 'Responsibilities'
+      },
+      {
+        id: '3',
+        question: 'How do I update housing availability?',
+        answer: 'Navigate to "Housing Management" in your dashboard, select the unit type, update availability status, set occupancy limits, and save changes. The system will automatically notify eligible applicants.',
+        category: 'Management'
+      }
+    ],
+    COMMITTEE: [
+      {
+        id: '1',
+        question: 'How do I review housing applications?',
+        answer: 'Access the "Application Review" section in your dashboard, view assigned applications, check eligibility criteria, review scoring calculations, and provide recommendations for allocation decisions.',
+        category: 'Reviews'
+      },
+      {
+        id: '2',
+        question: 'What is the scoring system for housing allocation?',
+        answer: 'The scoring system considers: Educational Title (40%), Service Years (35%), University Responsibility (10%), Family Condition (10%), and Special Conditions (5%). Total score determines allocation priority.',
+        category: 'Scoring'
+      },
+      {
+        id: '3',
+        question: 'How do committee meetings work?',
+        answer: 'Committee meetings are scheduled weekly to review applications, discuss allocation decisions, address special cases, and approve final housing allocations. Meeting minutes are recorded and stored in the system.',
+        category: 'Meetings'
+      }
+    ],
+    ADMIN: [
+      {
+        id: '1',
+        question: 'How do I manage user accounts?',
+        answer: 'Go to "User Management" in your dashboard, view all users, create new accounts, update user roles, reset passwords, and manage permissions. All changes are logged for audit purposes.',
+        category: 'User Management'
+      },
+      {
+        id: '2',
+        question: 'How do I generate housing reports?',
+        answer: 'Access the "Reports" section, select report type (allocation summary, occupancy rates, applicant statistics), set date range, and export reports in PDF or Excel format.',
+        category: 'Reports'
+      },
+      {
+        id: '3',
+        question: 'What system settings can I configure?',
+        answer: 'As admin, you can configure housing policies, scoring criteria, application deadlines, notification settings, user roles, and system backup schedules. All changes require proper authorization.',
+        category: 'System Settings'
+      }
+    ]
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -116,43 +181,95 @@ export function SupportPanel() {
   const getLocalResponse = (message: string): string => {
     const lowerMessage = message.toLowerCase().trim();
     
+    // Greetings - handle these first
+    if (lowerMessage.includes('hi') || lowerMessage.includes('hello') || lowerMessage.includes('hey') || lowerMessage === 'hii') {
+      return 'Hello! I\'m your housing assistant for University of Gondar. How can I help you today? You can ask me about housing applications, eligibility criteria, document requirements, application status, allocation processes, or housing rules.';
+    }
+    
+    // How are you
+    if (lowerMessage.includes('how are you') || lowerMessage.includes('how do you do')) {
+      return 'I\'m doing great, thank you! I\'m here to help you with any housing-related questions at University of Gondar. What would you like to know about housing applications, eligibility, or any other housing services?';
+    }
+    
+    // Thanks
+    if (lowerMessage.includes('thank') || lowerMessage.includes('thanks')) {
+      return 'You\'re welcome! I\'m happy to help with any housing questions. Is there anything else about University of Gondar housing that I can assist you with?';
+    }
+    
+    // Bye
+    if (lowerMessage.includes('bye') || lowerMessage.includes('goodbye') || lowerMessage === 'stpo') {
+      return 'Goodbye! Feel free to come back anytime if you have more questions about housing at University of Gondar. Have a great day!';
+    }
+    
+    // Stop
+    if (lowerMessage.includes('stop') || lowerMessage.includes('stpo')) {
+      return 'I understand. If you need help with anything else regarding University of Gondar housing, just let me know. I\'m here to assist you!';
+    }
+    
     // Housing applications
     if (lowerMessage.includes('apply') || lowerMessage.includes('application')) {
-      return 'To apply for housing at University of Gondar: 1) Login to your dashboard, 2) Navigate to "New Application" in the housing section, 3) Fill out all required personal and academic information, 4) Upload necessary documents (ID, academic certificates, proof of employment), 5) Submit your application and wait for committee review. The process typically takes 2-3 weeks.';
+      return 'To apply for housing at University of Gondar: 1) Complete the housing application form, 2) Submit required documents (academic certificates, proof of employment, marriage certificate if applicable), 3) Submit to the Housing Management Directorate, 4) Wait for committee review and scoring. Applications are accepted three times per year during the first weeks of October, February, and June.';
     }
     
     // Eligibility criteria
     if (lowerMessage.includes('eligible') || lowerMessage.includes('criteria') || lowerMessage.includes('requirement')) {
-      return 'Eligibility requirements for University of Gondar housing: 1) Must be a permanent employee of University of Gondar, 2) Must have completed probation period (minimum 6 months), 3) No disciplinary actions in the last 12 months, 4) Must meet minimum service years based on housing type (Studio: 1 year, 1-Bedroom: 2 years, 2-Bedroom: 3 years), 5) All required documentation must be submitted.';
+      return 'Eligibility requirements for University of Gondar housing: 1) Must be a permanent academic staff member (teaching, research, or community service), 2) Must meet the scoring criteria based on educational title, service years, university responsibility, family condition, and educational level. Scoring is competitive and based on a 100-point system.';
     }
     
     // Documents
     if (lowerMessage.includes('document') || lowerMessage.includes('paper') || lowerMessage.includes('certificate')) {
-      return 'Required documents for housing application: 1) Valid University ID card, 2) Academic certificates (highest degree), 3) Proof of employment (appointment letter), 4) Marriage certificate (if applicable), 5) Birth certificates of dependents (if applicable), 6) Recent passport-sized photograph, 7) Proof of no disciplinary action from HR, 8) Tax clearance certificate. All documents must be clear, recent, and in PDF format.';
+      return 'Required documents for housing application: 1) Completed application form, 2) Academic certificates (highest degree), 3) Proof of employment/academic appointment, 4) Marriage certificate (if applicable), 5) Medical evidence for special conditions (if applicable), 6) Personal condition evidence. All documents must be submitted with the application form.';
     }
     
     // Status checking
     if (lowerMessage.includes('status') || lowerMessage.includes('check') || lowerMessage.includes('progress')) {
-      return 'To check your housing application status: 1) Login to your dashboard, 2) Go to "My Applications" section, 3) Click on your application to view detailed status. Status updates include: Submitted, Under Review, Committee Evaluation, Approved, Rejected, or Pending Additional Information. You will receive email notifications for any status changes.';
+      return 'To check your housing application status: 1) Contact the Housing Management Directorate, 2) Check announcement boards on campus, 3) Results are announced after committee review. Successful applicants have 15 working days to accept and sign the housing usage contract.';
     }
     
     // Allocation/scoring
     if (lowerMessage.includes('allocation') || lowerMessage.includes('scoring') || lowerMessage.includes('points')) {
-      return 'Housing allocation scoring system: Educational Title (40% - PhD: 40pts, Masters: 30pts, Bachelor: 20pts, Diploma: 10pts), Service Years (35% - 1 year: 5pts, 2-5 years: 15pts, 6-10 years: 25pts, 10+ years: 35pts), University Responsibility (10% - Administrative roles: 10pts, Teaching: 7pts, Support: 5pts), Family Condition (10% - Married with children: 10pts, Married: 7pts, Single: 3pts), Special Conditions (5% - Disability: 5pts, Emergency: 3pts).';
+      return 'Housing allocation scoring system (100 points total): Educational Title (40% - Professor: 40pts, Associate Professor: 37pts, Assistant Professor: 34pts, Lecturer: 31pts, Assistant Lecturer: 25pts, Assistant Graduate II: 20pts, Assistant Graduate I: 15pts), Service Years (35% - 15+ years: 35pts, each year at university: 2.33pts), University Responsibility (10% - Deans/Directors: 10pts, Vice Deans: 9pts, Officials: 8pts, Unit Heads: 6pts, Coordinators: 4pts), Family Condition (10% - Married unable to have children: 10pts, Married with children: 8pts, Married without children: 5pts), Educational Level (5% - PhD: 5pts, Masters: 3pts, Bachelor: 1pt). Special additional points: Female teachers (5%), HIV/AIDS positive (3%), Physically disabled (5%).';
     }
     
     // Housing types
     if (lowerMessage.includes('type') || lowerMessage.includes('room') || lowerMessage.includes('studio')) {
-      return 'Available housing types at University of Gondar: Studio apartments (1 year service required), 1-Bedroom apartments (2 years service required), 2-Bedroom apartments (3 years service required). Allocation is based on points system and availability.';
+      return 'Available housing types at University of Gondar: Studio apartments, 1-Bedroom apartments, 2-Bedroom apartments, Special houses for high-ranking officials, and Guest houses. Allocation is based on the competitive scoring system and availability.';
+    }
+    
+    // Application schedule
+    if (lowerMessage.includes('schedule') || lowerMessage.includes('when') || lowerMessage.includes('time')) {
+      return 'Housing applications are accepted three times per year during the first week of October, February, and June. The Housing Management Directorate announces vacancies through campus notice boards and email. Registration and document collection typically take 7 working days.';
+    }
+    
+    // Rights and obligations
+    if (lowerMessage.includes('right') || lowerMessage.includes('obligation') || lowerMessage.includes('rule') || lowerMessage.includes('responsibility')) {
+      return 'Resident rights and obligations: 1) Must sign housing usage contract within 10 working days of allocation, 2) Annual lease renewal is required, 3) Cannot sublet or rent to others, 4) Cannot keep pets in university housing, 5) Cannot make structural changes without permission, 6) Must maintain university property and report damages, 7) Must report extended absences (3-day reporting intervals for 30-day periods), 8) Must vacate when leaving university employment or for education elsewhere.';
+    }
+    
+    // Home allowance
+    if (lowerMessage.includes('allowance') || lowerMessage.includes('rent') || lowerMessage.includes('subsidy')) {
+      return 'Home allowance is provided to teachers who do not receive university housing. It is paid monthly based on full month calculation. Payment stops when university housing is provided. Teachers going abroad for education may also receive home allowance during their study period.';
+    }
+    
+    // Special conditions
+    if (lowerMessage.includes('special') || lowerMessage.includes('disability') || lowerMessage.includes('medical')) {
+      return 'Special housing considerations: 1) Physically disabled teachers may be assigned ground floor or first floor housing based on medical needs, 2) Female teachers receive 5% additional points, 3) HIV/AIDS positive teachers receive 3% additional points, 4) Physically disabled teachers receive 5% additional points. Medical evidence must be provided for special condition requests.';
     }
     
     // Contact/help
     if (lowerMessage.includes('contact') || lowerMessage.includes('help') || lowerMessage.includes('office')) {
-      return 'For housing assistance: Main Office: +251 581 140 000 (Mon-Fri, 8:00 AM - 5:00 PM), Emergency: +251 581 140 001 (24/7), Email: housing@gondar.edu.et (Response within 24 hours), Office Location: Main Campus, Building A, Gondar, Ethiopia.';
+      return 'For housing assistance: Contact the Housing Management Directorate, Public and International Relations: (+251) 588 940 290, Email: info@uog.edu.et, Address: Maraki Street, Gondar, Ethiopia.';
     }
     
-    // Default response
-    return 'I can help you with housing applications, eligibility criteria, document requirements, application status, allocation processes, and contact information for University of Gondar housing. For specific inquiries about your application, please check your dashboard or contact the housing office at +251 581 140 000.';
+    // Role-specific default responses
+    const roleDefaults = {
+      LECTURER: 'I can help you with housing applications, eligibility criteria, document requirements, allocation scoring, housing rules, rights and obligations, and contact information for University of Gondar housing. Ask me about applications, scoring criteria, housing types, or any housing-related topic.',
+      OFFICER: 'I can assist you with housing unit management, application processing, allocation decisions, availability updates, and housing operations. For detailed procedures, refer to your dashboard or contact the Housing Management Directorate.',
+      COMMITTEE: 'I can help with application reviews, scoring criteria, committee meetings, allocation decisions, and evaluation processes. For committee-specific procedures, check your dashboard or contact the committee chair.',
+      ADMIN: 'I can assist with system administration, user management, report generation, system settings, and administrative workflows. For technical support, contact IT or check the admin documentation.'
+    };
+    
+    return roleDefaults[role] || 'I can help you with housing applications, eligibility criteria, document requirements, allocation scoring, housing rules, rights and obligations, and contact information for University of Gondar housing. Ask me about applications, scoring criteria, housing types, or any housing-related topic.';
   };
 
   const sendMessage = async () => {
@@ -170,50 +287,19 @@ export function SupportPanel() {
     setInputMessage('');
     setIsLoading(true);
 
-    try {
-      const response = await fetch("/api/chat/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: messageText,
-        }),
-        credentials: "include",
-      });
+    // Simulate processing delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        const aiMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          type: 'ai',
-          content: data.data.response,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, aiMessage]);
-      } else {
-        throw new Error(data.message || 'Failed to get response');
-      }
-    } catch (error: any) {
-      console.error('Chat error:', error);
-      
-      // Use local fallback if API fails
-      const fallbackResponse = getLocalResponse(messageText);
-      const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'ai',
-        content: fallbackResponse,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, aiMessage]);
-    } finally {
-      setIsLoading(false);
-    }
+    // Use local response directly
+    const response = getLocalResponse(messageText);
+    const aiMessage: ChatMessage = {
+      id: (Date.now() + 1).toString(),
+      type: 'ai',
+      content: response,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, aiMessage]);
+    setIsLoading(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -223,15 +309,12 @@ export function SupportPanel() {
     }
   };
 
-  const filteredFAQs = faqs.filter(faq => 
+  const filteredFAQs = faqsByRole[role].filter(faq => 
     faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
     faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleFAQHelpful = (faqId: string, helpful: boolean) => {
-    toast.success(helpful ? 'Thank you for your feedback!' : 'Thank you for helping us improve!');
-  };
-
+  
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -244,9 +327,14 @@ export function SupportPanel() {
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <HelpCircle className="w-8 h-8 text-white" />
-                </div>
+                <Image
+                  src="/ashuman.png"
+                  alt="University of Gondar logo"
+                  width={80}
+                  height={50}
+                  className="object-contain flex-shrink-0"
+                  priority
+                />
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">Housing Support Center</h1>
                   <p className="text-gray-600">Get comprehensive support for University of Gondar housing services</p>
@@ -415,32 +503,12 @@ export function SupportPanel() {
                                 <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                                   {faq.category}
                                 </Badge>
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                  <Users className="w-4 h-4" />
-                                  <span>{faq.views} views</span>
-                                </div>
                               </div>
                               <h3 className="text-lg font-semibold text-gray-900 mb-3">{faq.question}</h3>
                               
                               {expandedFAQ === faq.id && (
                                 <div className="space-y-4">
                                   <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
-                                  <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
-                                    <button
-                                      onClick={() => handleFAQHelpful(faq.id, true)}
-                                      className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
-                                    >
-                                      <ThumbsUp className="w-4 h-4" />
-                                      <span>Helpful ({faq.helpful})</span>
-                                    </button>
-                                    <button
-                                      onClick={() => handleFAQHelpful(faq.id, false)}
-                                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                                    >
-                                      <ThumbsDown className="w-4 h-4" />
-                                      <span>Not Helpful</span>
-                                    </button>
-                                  </div>
                                 </div>
                               )}
                             </div>
@@ -475,90 +543,61 @@ export function SupportPanel() {
             {/* Contact Tab */}
             {activeTab === 'contact' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+                {/* University of Gondar Official Contacts */}
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl shadow-lg p-8 border border-blue-200 md:col-span-2">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <Phone className="w-6 h-6 text-blue-600" />
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                      <Globe className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold text-gray-900">Phone Support</h3>
-                      <p className="text-gray-600">Call us for immediate assistance</p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="font-medium text-gray-900">Main Office</p>
-                      <p className="text-lg text-blue-600">+251 581 140 000</p>
-                      <p className="text-sm text-gray-600">Monday - Friday, 8:00 AM - 5:00 PM</p>
-                    </div>
-                    <div className="p-4 bg-red-50 rounded-lg">
-                      <p className="font-medium text-red-900">Emergency</p>
-                      <p className="text-lg text-red-600">+251 581 140 001</p>
-                      <p className="text-sm text-red-600">24/7 Available</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                      <Mail className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900">Email Support</h3>
-                      <p className="text-gray-600">Send us detailed inquiries</p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="font-medium text-gray-900">General Inquiries</p>
-                      <p className="text-blue-600">housing@gondar.edu.et</p>
-                      <p className="text-sm text-gray-600">Response within 24 hours</p>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="font-medium text-gray-900">Technical Support</p>
-                      <p className="text-blue-600">tech@gondar.edu.et</p>
-                      <p className="text-sm text-gray-600">Response within 12 hours</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200 md:col-span-2">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                      <MapPin className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900">Office Location</h3>
-                      <p className="text-gray-600">Visit us in person</p>
+                      <h3 className="text-xl font-semibold text-gray-900">University of Gondar Official Contacts</h3>
+                      <p className="text-gray-600">Public and International Relations</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="font-medium text-gray-900 mb-2">Housing Office</p>
-                      <p className="text-gray-700">Main Campus, Building A</p>
-                      <p className="text-gray-700">Gondar, Ethiopia</p>
-                      <div className="flex items-center gap-2 mt-3 text-sm text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        <span>Mon-Fri: 8:00 AM - 5:00 PM</span>
-                      </div>
+                    <div className="p-4 bg-white rounded-lg border border-blue-200">
+                      <p className="font-medium text-gray-900 mb-2">Phone</p>
+                      <p className="text-lg text-blue-600">(+251) 588 940 290</p>
                     </div>
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <p className="font-medium text-gray-900 mb-2">Emergency Contacts</p>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="font-medium text-red-600">Campus Security:</span>
-                          <span className="text-gray-700 ml-2">+251 581 140 999</span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-red-600">Medical:</span>
-                          <span className="text-gray-700 ml-2">+251 581 140 888</span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-red-600">Fire:</span>
-                          <span className="text-gray-700 ml-2">+251 581 140 777</span>
-                        </div>
-                      </div>
+                    <div className="p-4 bg-white rounded-lg border border-blue-200">
+                      <p className="font-medium text-gray-900 mb-2">Email</p>
+                      <p className="text-blue-600">info@uog.edu.et</p>
+                    </div>
+                  </div>
+                  <div className="mt-6 p-4 bg-white rounded-lg border border-blue-200">
+                    <p className="font-medium text-gray-900 mb-2">Address</p>
+                    <p className="text-gray-700">Maraki Street, Gondar, Ethiopia 196</p>
+                  </div>
+                  <div className="mt-6 p-4 bg-white rounded-lg border border-blue-200">
+                    <p className="font-medium text-gray-900 mb-4">Follow University of Gondar</p>
+                    <div className="flex flex-wrap gap-4">
+                      <a
+                        href="https://web.facebook.com/TheUniversityofGondar?_rdc=1&_rdr#"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Facebook className="w-5 h-5" />
+                        <span>Facebook</span>
+                      </a>
+                      <a
+                        href="https://www.youtube.com/channel/UCHCIpD0Qc7PRWUKpdb6A5yw"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        <Youtube className="w-5 h-5" />
+                        <span>YouTube</span>
+                      </a>
+                      <a
+                        href="https://x.com/UnivOfGondar"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+                      >
+                        <Globe className="w-5 h-5" />
+                        <span>X (Twitter)</span>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -568,72 +607,63 @@ export function SupportPanel() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button className="w-full flex items-center gap-3 px-4 py-3 text-left bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">
-                  <FileText className="w-5 h-5" />
-                  <span>Application Guide</span>
-                </button>
-                <button className="w-full flex items-center gap-3 px-4 py-3 text-left bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors">
-                  <CheckCircle className="w-5 h-5" />
-                  <span>Check Eligibility</span>
-                </button>
-                <button className="w-full flex items-center gap-3 px-4 py-3 text-left bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">
-                  <AlertCircle className="w-5 h-5" />
-                  <span>Application Status</span>
-                </button>
-              </div>
-            </div>
-
+            
             {/* Common Topics */}
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Common Topics</h3>
               <div className="space-y-2">
-                {[
-                  'How to apply for housing',
-                  'Eligibility requirements',
-                  'Document checklist',
-                  'Allocation timeline',
-                  'Housing types available'
-                ].map((topic) => (
-                  <button
-                    key={topic}
-                    onClick={() => setInputMessage(topic)}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                  >
-                    {topic}
-                  </button>
-                ))}
+                {(() => {
+                  const topics = 
+                    role === 'LECTURER' ? [
+                      'How to apply for housing',
+                      'Eligibility requirements',
+                      'Document checklist',
+                      'Application status tracking',
+                      'Allocation timeline'
+                    ] :
+                    role === 'OFFICER' ? [
+                      'How to manage allocations',
+                      'Update housing availability',
+                      'Application processing',
+                      'Unit assignment process',
+                      'Occupancy reporting'
+                    ] :
+                    role === 'COMMITTEE' ? [
+                      'Application review process',
+                      'Scoring criteria',
+                      'Committee meetings',
+                      'Allocation decisions',
+                      'Evaluation guidelines'
+                    ] :
+                    role === 'ADMIN' ? [
+                      'User management',
+                      'Report generation',
+                      'System settings',
+                      'Policy configuration',
+                      'Audit procedures'
+                    ] :
+                    [
+                      'Housing applications',
+                      'Eligibility requirements',
+                      'Document requirements',
+                      'Allocation processes',
+                      'Contact information'
+                    ];
+                  
+                  return topics.map((topic) => (
+                    <button
+                      key={topic}
+                      onClick={() => setInputMessage(topic)}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      {topic}
+                    </button>
+                  ));
+                })()}
               </div>
             </div>
 
-            {/* Support Status */}
-            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-              <div className="flex items-center gap-3 mb-4">
-                <Zap className="w-6 h-6" />
-                <h3 className="text-lg font-semibold">AI Assistant Status</h3>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-100">Status</span>
-                  <span className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-green-300">Online</span>
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-100">Response Time</span>
-                  <span className="text-green-300">&lt; 2 seconds</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-100">Availability</span>
-                  <span className="text-green-300">24/7</span>
-                </div>
-              </div>
-            </div>
-          </div>
+                      </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle, Clock, FileText, Home, Send, Calendar, Award, AlertCircle, Eye, User, GraduationCap } from "lucide-react";
@@ -255,11 +255,16 @@ function ApplicationDetails({ application }: { application: MyApplicationRow }) 
                     </div>
                     <div>
                       <p className="text-sm text-blue-700">Bonus Score</p>
-                      <p className="text-xl font-bold text-blue-900">{formData.score.bonusTotal || 0}</p>
+                      <p className="text-xl font-bold text-blue-900">
+                        {((formData.score.femaleBonus || 0) + 
+                          (formData.score.disabilityBonus || 0) + 
+                          (formData.score.chronicIllnessBonus || 0) + 
+                          (formData.score.spouseBonus || 0)).toFixed(2)}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm text-blue-700">Final Score</p>
-                      <p className="text-xl font-bold text-blue-900">{formData.score.finalScore || 0}</p>
+                      <p className="text-xl font-bold text-blue-900">{formData.score.final || 0}</p>
                     </div>
                   </div>
                 </div>
@@ -275,14 +280,40 @@ function ApplicationDetails({ application }: { application: MyApplicationRow }) 
 
 export function MyApplicationsPanel() {
   const queryClient = useQueryClient();
+  
   const {
     data: applications,
     isLoading,
     isError,
+    error,
+    refetch,
   } = useQuery({
     queryKey: ["my-applications"],
-    queryFn: getMyApplications,
+    queryFn: async () => {
+      console.log('Fetching applications...');
+      try {
+        const result = await getMyApplications();
+        console.log('Applications fetched successfully:', result);
+        console.log('Number of applications:', Array.isArray(result) ? result.length : 'Not an array');
+        return result;
+      } catch (err) {
+        console.error('Error in queryFn:', err);
+        throw err;
+      }
+    },
+    retry: (failureCount, error) => {
+      // Don't retry on authentication errors
+      if (error instanceof ApiError && error.status === 401) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
+
+  // Auto-refresh on mount
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const submitMutation = useMutation({
     mutationFn: submitApplication,
@@ -311,9 +342,18 @@ export function MyApplicationsPanel() {
               Track your housing applications, review scores, and manage submissions
             </p>
           </div>
-          <div className="bg-white rounded-lg px-4 py-2 shadow-sm border border-blue-200">
-            <p className="text-sm text-gray-500">Total Applications</p>
-            <p className="text-2xl font-bold text-blue-600">{applications?.length || 0}</p>
+          <div className="flex items-center gap-4">
+            <div className="bg-white rounded-lg px-4 py-2 shadow-sm border border-blue-200">
+              <p className="text-sm text-gray-500">Total Applications</p>
+              <p className="text-2xl font-bold text-blue-600">{applications?.length || 0}</p>
+            </div>
+            <Button 
+              onClick={() => refetch()} 
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              Refresh
+            </Button>
           </div>
         </div>
       </div>
@@ -329,7 +369,20 @@ export function MyApplicationsPanel() {
         ) : isError ? (
           <div className="text-center py-12">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
-            <p className="mt-4 text-red-700">Could not load applications. Please try again.</p>
+            <p className="mt-4 text-red-700">
+              {error instanceof ApiError && error.status === 401 
+                ? "Please log in to view your applications." 
+                : "Could not load applications. Please try again."
+              }
+            </p>
+            {error instanceof ApiError && error.status === 401 && (
+              <Button 
+                className="mt-4" 
+                onClick={() => window.location.href = '/auth/login'}
+              >
+                Go to Login
+              </Button>
+            )}
           </div>
         ) : !applications || applications.length === 0 ? (
           <div className="text-center py-12">

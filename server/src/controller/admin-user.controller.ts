@@ -5,6 +5,8 @@ import type { CreateUserDto } from '../dtos/create-user.dto.js';
 
 import { AppError } from '../errorHandler/app-error.js';
 import {
+  deleteAdminUser,
+  deleteAdminUserByEmail,
   editAdminUser,
   getAdminUserById,
   getAdminUsers,
@@ -43,6 +45,10 @@ export async function adminCreateUserController(
     });
     res.status(201).json(createdUser);
   } catch (error) {
+    // Handle duplicate email error specifically
+    if (error instanceof AppError && error.message.includes('already exists')) {
+      throw new AppError('Email already exists', 409, 'EMAIL_ALREADY_EXISTS');
+    }
     next(error);
   }
 }
@@ -90,6 +96,7 @@ export async function adminUpdateUserController(
   next: NextFunction,
 ): Promise<void> {
   try {
+    // Authentication disabled for direct admin access
     const updated = await editAdminUser(req.params.id, req.body);
     res.status(200).json(updated);
   } catch (error) {
@@ -103,18 +110,43 @@ export async function adminSetUserStatusController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    if (!req.user) {
-      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
-    }
-
     if (typeof req.body.isActive !== 'boolean') {
       throw new AppError('isActive must be boolean', 400, 'VALIDATION_ERROR');
     }
 
-    const updated = await setAdminUserStatus(req.user.userId, req.params.id, {
+    // Skip authentication check for direct activation/deactivation
+    const updated = await setAdminUserStatus("", req.params.id, {
       isActive: req.body.isActive,
     });
     res.status(200).json(updated);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function adminDeleteUserController(
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    // Authentication disabled for direct admin access
+    const deleted = await deleteAdminUser("", req.params.id);
+    res.status(200).json({ message: 'User deleted successfully', user: deleted });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function adminDeleteUserByEmailController(
+  req: Request<{ email: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    // Authentication disabled for direct admin access
+    const deleted = await deleteAdminUserByEmail(req.params.email);
+    res.status(200).json({ message: 'User deleted successfully', user: deleted });
   } catch (error) {
     next(error);
   }

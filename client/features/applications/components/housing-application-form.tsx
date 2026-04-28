@@ -14,7 +14,6 @@ interface ApplicationFormData {
   phoneNumber: string;
   college: string;
   department: string;
-  otherCollege?: string;
 
   // Academic & Employment Information
   educationalTitle: string;
@@ -71,7 +70,6 @@ export function HousingApplicationForm() {
     phoneNumber: '',
     college: '',
     department: '',
-    otherCollege: '',
     educationalTitle: '',
     educationalLevel: '',
     startDateAtUog: '',
@@ -211,7 +209,6 @@ export function HousingApplicationForm() {
         phoneNumber: '',
         college: '',
         department: '',
-        otherCollege: '',
         educationalTitle: '',
         educationalLevel: '',
         startDateAtUog: '',
@@ -393,13 +390,17 @@ export function HousingApplicationForm() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select college</option>
-                    <option value="INFORMATICS">College of Informatics</option>
-                    <option value="MEDICINE_HEALTH_SCIENCE">College of Medicine & Health Science</option>
-                    <option value="SCIENCE">College of Science</option>
-                    <option value="SOCIAL_SCIENCE">College of Social Science</option>
-                    <option value="BUSINESS_ECONOMICS">College of Business & Economics</option>
-                    <option value="TECHNOLOGY">Institute of Technology</option>
-                    <option value="OTHER">Other: ________</option>
+                    <option value="College of Medicine and Health Sciences">College of Medicine and Health Sciences</option>
+                    <option value="College of Business and Economics">College of Business and Economics</option>
+                    <option value="College of Natural and Computational Sciences">College of Natural and Computational Sciences</option>
+                    <option value="College of Social Sciences and Humanities">College of Social Sciences and Humanities</option>
+                    <option value="College of Agriculture and Environmental Sciences">College of Agriculture and Environmental Sciences</option>
+                    <option value="College of Veterinary Medicine and Animal Sciences">College of Veterinary Medicine and Animal Sciences</option>
+                    <option value="College of Education">College of Education</option>
+                    <option value="College of Informatics">College of Informatics</option>
+                    <option value="Institute of Technology">Institute of Technology</option>
+                    <option value="Institute of Biotechnology">Institute of Biotechnology</option>
+                    <option value="School of Law">School of Law</option>
                   </select>
                 </div>
 
@@ -414,19 +415,7 @@ export function HousingApplicationForm() {
                   />
                 </div>
 
-                {formData.college === 'OTHER' && (
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Other College Name</label>
-                    <input
-                      type="text"
-                      value={formData.otherCollege}
-                      onChange={(e) => handleInputChange('otherCollege', e.target.value)}
-                      placeholder="Specify other college"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                )}
-              </div>
+                              </div>
             </div>
           </div>
 

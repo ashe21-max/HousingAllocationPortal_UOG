@@ -21,7 +21,8 @@ import {
   UserPlus,
   AlertCircle,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Globe
 } from "lucide-react";
 import { toast } from "sonner";
 

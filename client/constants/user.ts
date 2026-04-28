@@ -5,10 +5,13 @@ export type UserDepartment =
   | "College of Business and Economics"
   | "College of Natural and Computational Sciences"
   | "College of Social Sciences and Humanities"
-  | "College of Veterinary Medicine and Animal Sciences"
   | "College of Agriculture and Environmental Sciences"
+  | "College of Veterinary Medicine and Animal Sciences"
   | "College of Education"
-  | "College of Informatics";
+  | "College of Informatics"
+  | "Institute of Technology"
+  | "Institute of Biotechnology"
+  | "School of Law";
 
 export const roleOptions: Array<{ label: string; value: UserRole }> = [
   { label: "ADMIN", value: "ADMIN" },
@@ -38,13 +41,16 @@ export const departmentOptions: Array<{ label: string; value: UserDepartment | "
     value: "College of Social Sciences and Humanities",
   },
   {
-    label: "College of Veterinary Medicine and Animal Sciences",
-    value: "College of Veterinary Medicine and Animal Sciences",
-  },
-  {
     label: "College of Agriculture and Environmental Sciences",
     value: "College of Agriculture and Environmental Sciences",
   },
+  {
+    label: "College of Veterinary Medicine and Animal Sciences",
+    value: "College of Veterinary Medicine and Animal Sciences",
+  },
   { label: "College of Education", value: "College of Education" },
   { label: "College of Informatics", value: "College of Informatics" },
+  { label: "Institute of Technology", value: "Institute of Technology" },
+  { label: "Institute of Biotechnology", value: "Institute of Biotechnology" },
+  { label: "School of Law", value: "School of Law" },
 ];

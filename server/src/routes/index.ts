@@ -12,6 +12,8 @@ import { scoreRouter } from './score.routes.js';
 import { healthRouter } from './health.routes.js';
 import { settingsRouter } from './settings.routes.js';
 import chatRouter from './chat.routes.js';
+import { testRouter } from './test.routes.js';
+import { schemaTestRouter } from './schema-test.routes.js';
 
 const apiRouter = Router();
 
@@ -27,5 +29,7 @@ apiRouter.use('/score', scoreRouter);
 apiRouter.use('/health', healthRouter);
 apiRouter.use('/settings', settingsRouter);
 apiRouter.use('/chat', chatRouter);
+apiRouter.use('/test', testRouter);
+apiRouter.use('/schema', schemaTestRouter);
 
 export { apiRouter };

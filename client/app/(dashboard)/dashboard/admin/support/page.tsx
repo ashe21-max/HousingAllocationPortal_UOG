@@ -9,7 +9,7 @@ export default function AdminSupportPage() {
         title="Support"
         description="Get help with housing applications, technical issues, and more"
       >
-        <SupportPanel />
+        <SupportPanel role="ADMIN" />
       </DashboardShell>
     </DashboardGate>
   );

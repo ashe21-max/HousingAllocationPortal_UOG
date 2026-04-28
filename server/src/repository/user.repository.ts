@@ -254,3 +254,12 @@ export async function listAdminManagedUsersPaginated(
     totalPages: Math.max(Math.ceil(total / query.pageSize), 1),
   };
 }
+
+export async function deleteAdminManagedUser(userId: string) {
+  const [deletedUser] = await db
+    .delete(users)
+    .where(eq(users.id, userId))
+    .returning(adminUserSelection);
+
+  return deletedUser ?? null;
+}

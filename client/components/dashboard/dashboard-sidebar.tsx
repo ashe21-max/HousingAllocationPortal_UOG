@@ -23,7 +23,11 @@ import {
   User,
   ChevronDown,
   Activity,
-  X
+  X,
+  Database,
+  Shield,
+  Download,
+  History
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +59,7 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
       ? [
           { name: "Create User", href: "/dashboard/admin/create-user", icon: UserPlus },
           { name: "Manage Users", href: "/dashboard/admin/manage-users", icon: Users },
+          { name: "Backup", href: "/dashboard/admin/backup", icon: Database },
           { name: "Settings", href: "/dashboard/admin/settings", icon: Settings },
           { name: "Support", href: "/dashboard/admin/support", icon: HelpCircle },
         ] 

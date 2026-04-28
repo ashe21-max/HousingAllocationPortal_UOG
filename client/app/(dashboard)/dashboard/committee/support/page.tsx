@@ -9,7 +9,7 @@ export default function CommitteeSupportPage() {
         title="Support"
         description="Get help with housing applications, technical issues, and more"
       >
-        <SupportPanel />
+        <SupportPanel role="COMMITTEE" />
       </DashboardShell>
     </DashboardGate>
   );

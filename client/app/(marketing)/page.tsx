@@ -376,10 +376,19 @@ export default function LandingPage() {
             </div>
           </div>
           
-          <div className="mt-8 pt-8 border-t border-[var(--border)] text-center">
+          <div className="mt-8 pt-8 border-t border-[var(--border)] text-center space-y-3">
             <p className="text-sm text-[var(--foreground-tertiary)]">
               © 2026 University of Gondar. All rights reserved.
             </p>
+            <a
+              href="https://uog.edu.et/login/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-[var(--color-blue)] hover:text-[var(--color-blue-dark)] transition-colors duration-[var(--transition-fast)] opacity-70 hover:opacity-100"
+            >
+              <Globe className="w-4 h-4" />
+              Visit University Portal
+            </a>
           </div>
         </div>
       </footer>

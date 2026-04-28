@@ -168,3 +168,9 @@ export async function setAdminUserStatus(id: string, isActive: boolean) {
     body: { isActive },
   });
 }
+
+export async function deleteAdminUser(id: string) {
+  return apiRequest<{ message: string; user: AdminUser }>(`/admin/users/${id}`, {
+    method: "DELETE",
+  });
+}

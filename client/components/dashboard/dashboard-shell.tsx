@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X, Bell, Search } from "lucide-react";
+import { Menu, X, Bell, Search, Globe } from "lucide-react";
 import { BrandLockup } from "@/components/brand/brand-lockup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,7 +69,16 @@ export function DashboardShell({
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Notification bell removed */}
+            <a
+              href="https://uog.edu.et/login/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-2 text-sm text-[var(--color-blue)] hover:text-[var(--color-blue-dark)] transition-colors duration-[var(--transition-fast)] opacity-70 hover:opacity-100"
+              title="Visit University Portal"
+            >
+              <Globe className="w-4 h-4" />
+              <span className="hidden lg:inline">University Portal</span>
+            </a>
           </div>
         </header>
 

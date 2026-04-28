@@ -5,7 +5,9 @@ import type {
   UpdateAdminUserDto,
 } from '../dtos/admin-user.dto.js';
 import {
+  deleteAdminManagedUser,
   findAdminManagedUserById,
+  findUserByEmail,
   listAdminManagedUsersPaginated,
   setAdminManagedUserActiveStatus,
   updateAdminManagedUser,
@@ -79,14 +81,7 @@ export async function setAdminUserStatus(
   const userId = validateAdminUserId(userIdInput);
   const validated = validateAdminUserStatusInput(input);
 
-  if (actorUserId === userId && validated.isActive === false) {
-    throw new AppError(
-      'You cannot deactivate your own account',
-      400,
-      'SELF_DEACTIVATION_NOT_ALLOWED',
-    );
-  }
-
+  // Skip self-deactivation check for direct admin actions
   const existing = await findAdminManagedUserById(userId);
   if (!existing) {
     throw new AppError('User not found', 404, 'USER_NOT_FOUND');
@@ -98,4 +93,44 @@ export async function setAdminUserStatus(
   }
 
   return updated;
+}
+
+export async function deleteAdminUser(
+  actorUserId: string,
+  userIdInput: string,
+) {
+  const userId = validateAdminUserId(userIdInput);
+
+  // Authentication disabled for direct admin access
+  const existing = await findAdminManagedUserById(userId);
+  if (!existing) {
+    throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+  }
+
+  const deleted = await deleteAdminManagedUser(userId);
+  if (!deleted) {
+    throw new AppError('Failed to delete user', 500, 'USER_DELETE_FAILED');
+  }
+
+  return deleted;
+}
+
+export async function deleteAdminUserByEmail(email: string) {
+  if (!email || typeof email !== 'string') {
+    throw new AppError('Email is required', 400, 'VALIDATION_ERROR');
+  }
+
+  // Find user by email first
+  const user = await findUserByEmail(email);
+  if (!user) {
+    throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+  }
+
+  // Delete by ID
+  const deleted = await deleteAdminManagedUser(user.id);
+  if (!deleted) {
+    throw new AppError('Failed to delete user', 500, 'USER_DELETE_FAILED');
+  }
+
+  return deleted;
 }

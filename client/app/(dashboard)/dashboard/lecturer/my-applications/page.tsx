@@ -9,9 +9,6 @@ export default function LecturerMyApplicationsPage() {
         title="My Applications"
         description="View your saved and submitted housing applications."
       >
-
-
-        
         <MyApplicationsPanel />
       </DashboardShell>
     </DashboardGate>

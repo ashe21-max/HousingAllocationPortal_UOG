@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
 import { logout } from '@/lib/api/auth';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface UserProfile {
   id: string;
@@ -134,9 +135,11 @@ export function ProfileComponent() {
           >
             <div className="flex items-center gap-1">
               {editForm.profilePicture ? (
-                <img
+                <Image
                   src={editForm.profilePicture}
                   alt="Profile"
+                  width={16}
+                  height={16}
                   className="h-4 w-4 rounded-full object-cover"
                 />
               ) : (
@@ -160,9 +163,11 @@ export function ProfileComponent() {
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
                 {editForm.profilePicture ? (
-                  <img
+                  <Image
                     src={editForm.profilePicture}
                     alt="Profile"
+                    width={40}
+                    height={40}
                     className="h-10 w-10 rounded-full object-cover"
                   />
                 ) : (
@@ -213,9 +218,11 @@ export function ProfileComponent() {
               <div className="flex flex-col items-center">
                 <div className="relative">
                   {editForm.profilePicture ? (
-                    <img
+                    <Image
                       src={editForm.profilePicture}
                       alt="Profile"
+                      width={80}
+                      height={80}
                       className="h-20 w-20 rounded-full object-cover"
                     />
                   ) : (

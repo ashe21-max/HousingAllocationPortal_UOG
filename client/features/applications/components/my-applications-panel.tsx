@@ -7,6 +7,13 @@ import { CheckCircle, Clock, FileText, Home, Send, Calendar, Award, AlertCircle,
 
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
+import { ApplicationFormData } from './housing-application-form';
+import { ScoreBreakdown } from '@/lib/housing-scoring';
+
+interface ParsedApplicationData extends ApplicationFormData {
+  score?: ScoreBreakdown;
+  submittedAt?: string;
+}
 import {
   getMyApplications,
   submitApplication,
@@ -79,7 +86,7 @@ function getStatusIcon(status: string) {
 // Component to display detailed application form data from database
 function ApplicationDetails({ application }: { application: MyApplicationRow }) {
   const [showDetails, setShowDetails] = React.useState(false);
-  const [formData, setFormData] = React.useState<any>(null);
+  const [formData, setFormData] = React.useState<ParsedApplicationData | null>(null);
 
   React.useEffect(() => {
     if (application.notes) {
@@ -393,7 +400,7 @@ export function MyApplicationsPanel() {
         ) : (
           /* Applications List - Full Frame */
           <div className="space-y-6">
-          {applications.map((application, index) => (
+          {applications.map((application) => (
             <div key={application.id} className="border-b border-gray-200 last:border-b-0">
               {/* Application Header - Integrated into main frame */}
               <div className="flex items-center justify-between py-4">

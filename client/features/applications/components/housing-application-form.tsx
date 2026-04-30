@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { calculateCompleteScore } from '@/lib/housing-scoring';
 import { apiRequest } from '@/lib/api/client';
 
-interface ApplicationFormData {
+export interface ApplicationFormData {
   // Personal Information
   fullName: string;
   staffId: string;
@@ -62,6 +62,12 @@ interface ApplicationRound {
   endsAt: string;
 }
 
+interface Application {
+  id: string;
+  roundId?: string;
+  notes?: string;
+}
+
 export function HousingApplicationForm() {
   const [formData, setFormData] = useState<ApplicationFormData>({
     fullName: '',
@@ -94,7 +100,6 @@ export function HousingApplicationForm() {
   const [activeRounds, setActiveRounds] = useState<ApplicationRound[]>([]);
   const [selectedRound, setSelectedRound] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [existingApplication, setExistingApplication] = useState<any>(null);
 
   useEffect(() => {
     loadApplicationData();
@@ -103,7 +108,7 @@ export function HousingApplicationForm() {
 
   const loadActiveRounds = async () => {
     try {
-      const response = await apiRequest<any>('/applications/options');
+      const response = await apiRequest<{ rounds: ApplicationRound[] }>('/applications/options');
       console.log('Rounds response:', response); // Debug log
       
       // Extract rounds from the response object
@@ -121,10 +126,9 @@ export function HousingApplicationForm() {
   const loadApplicationData = async () => {
     try {
       // Load existing application
-      const appData = await apiRequest<any[]>('/applications/me');
+      const appData = await apiRequest<Application[]>('/applications/me');
       if (appData && appData.length > 0) {
         const latestApp = appData[0];
-        setExistingApplication(latestApp);
         if (latestApp.roundId) {
           setSelectedRound(latestApp.roundId);
         }
@@ -134,7 +138,7 @@ export function HousingApplicationForm() {
           try {
             const parsedData = JSON.parse(latestApp.notes);
             setFormData(prev => ({ ...prev, ...parsedData }));
-          } catch (e) {
+          } catch {
             console.log('Could not parse existing application data');
           }
         }
@@ -158,11 +162,11 @@ export function HousingApplicationForm() {
     }
 
     const score = calculateCompleteScore({
-      educationalTitle: formData.educationalTitle as any,
-      educationalLevel: formData.educationalLevel as any,
+      educationalTitle: formData.educationalTitle,
+      educationalLevel: formData.educationalLevel,
       startDateAtUog: new Date(formData.startDateAtUog),
-      responsibility: formData.responsibility as any,
-      familyStatus: formData.familyStatus as any,
+      responsibility: formData.responsibility,
+      familyStatus: formData.familyStatus,
       isFemale: formData.isFemale,
       isDisabled: formData.isDisabled,
       hasChronicIllness: formData.hasChronicIllness,
@@ -259,7 +263,7 @@ export function HousingApplicationForm() {
         })
       };
 
-      const result = await apiRequest<any>('/applications/draft', {
+      const result = await apiRequest<{ id: string }>('/applications/draft', {
         method: 'POST',
         body: applicationData,
       });
@@ -272,7 +276,6 @@ export function HousingApplicationForm() {
         toast.success('Application submitted successfully!');
       } else {
         toast.success('Application saved as draft!');
-        setExistingApplication(result);
       }
 
     } catch (error) {
@@ -851,8 +854,5 @@ export function HousingApplicationForm() {
       </div>
     </div>
   );
-}
-function setHousingUnits(availableHouses: any) {
-  throw new Error('Function not implemented.');
 }
 

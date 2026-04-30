@@ -11,8 +11,6 @@ import {
   Users,
   Settings,
   HelpCircle,
-  CreditCard,
-  Calendar,
   MessageSquare,
   Building,
   Award,

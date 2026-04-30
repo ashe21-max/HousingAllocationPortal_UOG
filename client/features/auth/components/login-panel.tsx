@@ -4,10 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowRight,
-  Fingerprint,
   KeyRound,
-  Mail,
   MailCheck,
   Sparkles,
   Zap,
@@ -21,8 +18,7 @@ import {
   UserPlus,
   AlertCircle,
   CheckCircle2,
-  Loader2,
-  Globe
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 

@@ -8,15 +8,12 @@ import {
   ShieldCheck, 
   TicketPercent, 
   ArrowLeft,
-  Clock,
   CheckCircle2,
   AlertCircle,
   Loader2,
   Sparkles,
   Shield,
-  Zap,
   Timer,
-  KeyRound
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -99,10 +96,12 @@ export function VerifyPanel({ userId }: VerifyPanelProps) {
           <CardHeader className="relative z-10 text-center space-y-6 pb-8">
             {/* Back Button */}
             <div className="absolute top-4 left-4">
-              <Button variant="ghost" size="sm" className="gap-2 text-[var(--foreground-secondary)] hover:text-[var(--foreground)]">
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </Button>
+              <Link href="/auth/login">
+                <Button variant="ghost" size="sm" className="gap-2 text-[var(--foreground-secondary)] hover:text-[var(--foreground)]">
+                  <ArrowLeft className="w-4 h-4" />
+                  Back
+                </Button>
+              </Link>
             </div>
 
             {/* Logo/Icon Section */}
@@ -226,7 +225,7 @@ export function VerifyPanel({ userId }: VerifyPanelProps) {
                   <AlertCircle className="w-4 h-4 text-[var(--color-yellow)] mt-0.5 flex-shrink-0" />
                   <div className="text-xs">
                     <p className="text-[var(--foreground)] font-medium mb-1">Check Your Email</p>
-                    <p className="text-[var(--foreground-tertiary)]">If you don't see the code, check your spam or junk folder.</p>
+                    <p className="text-[var(--foreground-tertiary)]">If you not see the code, check your spam or junk folder.</p>
                   </div>
                 </div>
               </div>
@@ -236,13 +235,7 @@ export function VerifyPanel({ userId }: VerifyPanelProps) {
                 <p className="text-xs text-[var(--foreground-tertiary)] mb-2">
                   Having trouble with verification?
                 </p>
-                <div className="flex justify-center gap-4">
-                 
-                  <span className="text-[var(--foreground-tertiary)]">|</span>
-                  <Link href="/auth/login" className="text-[var(--color-green)] hover:text-[var(--color-green-dark)] text-xs transition-colors duration-[var(--transition-fast)]">
-                    Back to Login
-                  </Link>
-                </div>
+                
               </div>
             </div>
           </CardContent>

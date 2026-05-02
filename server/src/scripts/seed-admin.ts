@@ -6,7 +6,7 @@ import { upsertSeedAdmin } from '../repository/user.repository.js';
 async function main(): Promise<void> {
   const seededAdmin = await upsertSeedAdmin({
     name: 'ashu',
-    email: 'ashenafiyfat.com',
+    email: 'ashenafiyfat@gmail.com',
     password: 'Ashu@3610',
   });
 

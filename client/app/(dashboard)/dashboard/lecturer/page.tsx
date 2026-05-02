@@ -20,14 +20,14 @@ export default function LecturerDashboardPage() {
           </p>
 
           {/* Lecturer Core Functions */}
-          <div className="core-functions">
-            <div>📊 Overview →</div>
-            <div>📝 New Application →</div>
-            <div>📂 My Applications →</div>
-            <div>📈 View Results →</div>
-            <div>⚠️ File Complaint →</div>
-            <div>⚙️ Settings →</div>
-            <div>💬 Support</div>
+          <div className="core-functions bg-gradient-to-br from-[var(--color-blue)]/10 via-[var(--color-green)]/10 to-[var(--color-yellow)]/10 backdrop-blur-sm">
+            <div className="hover:bg-gradient-to-r hover:from-[var(--color-blue)]/20 hover:to-[var(--color-green)]/20 transition duration-300">📊 Overview →</div>
+            <div className="hover:bg-gradient-to-r hover:from-[var(--color-green)]/20 hover:to-[var(--color-yellow)]/20 transition duration-300">📝 New Application →</div>
+            <div className="hover:bg-gradient-to-r hover:from-[var(--color-yellow)]/20 hover:to-[var(--color-blue)]/20 transition duration-300">📂 My Applications →</div>
+            <div className="hover:bg-gradient-to-r hover:from-[var(--color-blue)]/20 hover:to-[var(--color-green)]/20 transition duration-300">📈 View Results →</div>
+            <div className="hover:bg-gradient-to-r hover:from-[var(--color-green)]/20 hover:to-[var(--color-yellow)]/20 transition duration-300">⚠️ File Complaint →</div>
+            <div className="hover:bg-gradient-to-r hover:from-[var(--color-yellow)]/20 hover:to-[var(--color-blue)]/20 transition duration-300">⚙️ Settings →</div>
+            <div className="hover:bg-gradient-to-r hover:from-[var(--color-blue)]/20 hover:to-[var(--color-green)]/20 transition duration-300">💬 Support</div>
           </div>
         </div>
       </DashboardShell>

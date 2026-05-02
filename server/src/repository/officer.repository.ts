@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray } from 'drizzle-orm';
 
 import { db } from '../lib/db/index.js';
+import { allocationReports } from '../lib/db/schema/report.js';
 import { allocationResults } from '../lib/db/schema/allocation.js';
 import { applications, applicationRounds } from '../lib/db/schema/application.js';
 import { users } from '../lib/db/schema/auth.js';
@@ -18,7 +19,7 @@ export async function findRoundsReadyForAllocation() {
       endsAt: applicationRounds.endsAt,
     })
     .from(applicationRounds)
-    .where(eq(applicationRounds.committeeRankingStatus, 'FINAL_SUBMITTED'))
+    .where(eq(applicationRounds.status, 'OPEN'))
     .orderBy(asc(applicationRounds.startsAt));
 }
 
@@ -123,6 +124,83 @@ export async function updateApplicationRoundStatus(
     });
 
   return row ?? null;
+}
+
+export async function deleteApplicationRound(roundId: string) {
+  await db.delete(applicationRounds).where(eq(applicationRounds.id, roundId));
+}
+
+export async function saveAllocationReport(input: {
+  roundId: string;
+  roundName: string;
+  roundStatus: string;
+  committeeRankingStatus: string;
+  allocationCount: number;
+  reportData: any;
+  sentByUserId: string;
+}) {
+  const [row] = await db
+    .insert(allocationReports)
+    .values({
+      roundId: input.roundId,
+      roundName: input.roundName,
+      roundStatus: input.roundStatus,
+      committeeRankingStatus: input.committeeRankingStatus,
+      allocationCount: String(input.allocationCount),
+      reportData: input.reportData,
+      sentByUserId: input.sentByUserId,
+      status: 'PENDING',
+    })
+    .returning({
+      id: allocationReports.id,
+      roundId: allocationReports.roundId,
+      roundName: allocationReports.roundName,
+      roundStatus: allocationReports.roundStatus,
+      committeeRankingStatus: allocationReports.committeeRankingStatus,
+      allocationCount: allocationReports.allocationCount,
+      reportData: allocationReports.reportData,
+      sentByUserId: allocationReports.sentByUserId,
+      sentAt: allocationReports.sentAt,
+      status: allocationReports.status,
+    });
+  return row;
+}
+
+export async function findAllAllocationReports() {
+  return db
+    .select()
+    .from(allocationReports)
+    .where(eq(allocationReports.deletedAt, null))
+    .orderBy(allocationReports.sentAt);
+}
+
+export async function findAllocationReportById(id: string) {
+  const [row] = await db
+    .select()
+    .from(allocationReports)
+    .where(eq(allocationReports.id, id));
+  return row;
+}
+
+export async function updateAllocationReportStatus(id: string, status: string, adminNotes?: string, reviewedByUserId?: string) {
+  const [row] = await db
+    .update(allocationReports)
+    .set({
+      status,
+      adminNotes,
+      reviewedAt: new Date(),
+      reviewedByUserId,
+    })
+    .where(eq(allocationReports.id, id))
+    .returning();
+  return row;
+}
+
+export async function deleteAllocationReport(id: string) {
+  await db
+    .update(allocationReports)
+    .set({ deletedAt: new Date() })
+    .where(eq(allocationReports.id, id));
 }
 
 export async function findAvailableHousingUnits() {

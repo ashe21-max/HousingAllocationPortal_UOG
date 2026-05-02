@@ -12,49 +12,112 @@ import { randomUUID } from 'crypto';
 
 export async function createBackupService(userId: string, backupData: CreateBackupDto): Promise<SystemBackup> {
   const { type, description, tables } = backupData;
-  
+
   // Generate backup filename
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const filename = `housing_portal_${type}_backup_${timestamp}.sql`;
-  
-  // Create backup directory
-  const backupDir = path.join(process.cwd(), 'backups');
-  await fs.mkdir(backupDir, { recursive: true });
-  const filePath = path.join(backupDir, filename);
-  
-  // Create real backup file using pg_dump
-  const { exec } = require('child_process');
-  const { promisify } = require('util');
-  const execAsync = promisify(exec);
-  
-  const env = {
-    ...process.env,
-    PGPASSWORD: '12345678'
-  };
-  
-  const pgDumpCommand = `pg_dump --host=localhost --port=5432 --username=postgres --dbname=HAS --format=plain --no-owner --no-privileges --verbose > "${filePath}"`;
-  
-  await execAsync(pgDumpCommand, { env });
-  
-  // Get file size
-  const stats = await fs.stat(filePath);
-  
-  // Create backup record
+
+  // Create backup record with 'creating' status
   const newBackup = {
     id: randomUUID(),
     filename,
     type,
-    size: stats.size,
-    status: 'completed',
+    size: 0,
+    status: 'creating',
     description: description || `Manual ${type} backup`,
     tables: tables || null,
     createdBy: userId || '00000000-0000-0000-0000-000000000000',
-    filePath,
-    completedAt: new Date(),
+    createdAt: new Date(),
   };
 
   const [backup] = await db.insert(systemBackups).values(newBackup).returning();
-  return backup;
+
+  // Log backup start
+  await logBackupService(backup.id, 'INFO', 'Backup started', { type, tables });
+
+  try {
+    // Create backup directory
+    const backupDir = path.join(process.cwd(), 'backups');
+    await fs.mkdir(backupDir, { recursive: true });
+    const filePath = path.join(backupDir, filename);
+
+    // Get database connection details from environment
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
+      throw new Error('DATABASE_URL not configured');
+    }
+
+    // Parse database URL to get connection details
+    const url = new URL(dbUrl);
+    const dbname = url.pathname.substring(1); // Remove leading slash
+    const host = url.hostname;
+    const port = url.port || '5432';
+    const username = url.username;
+    const password = url.password;
+
+    // Build pg_dump command
+    let pgDumpCommand = `pg_dump --host=${host} --port=${port} --username=${username} --dbname=${dbname} --format=plain --no-owner --no-privileges --verbose`;
+
+    // Add table specifications for partial backups
+    if (type === 'partial' && tables && tables.length > 0) {
+      pgDumpCommand += ` --table=${tables.join(' --table=')}`;
+    }
+
+    // Add output file
+    pgDumpCommand += ` > "${filePath}"`;
+
+    // Log backup command
+    await logBackupService(backup.id, 'INFO', 'Executing pg_dump', { command: pgDumpCommand });
+
+    // Execute pg_dump with proper environment
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    const env = {
+      ...process.env,
+      PGPASSWORD: password
+    };
+
+    const { stdout, stderr } = await execAsync(pgDumpCommand, { env });
+
+    // Check if backup file was created
+    const stats = await fs.stat(filePath);
+    if (stats.size === 0) {
+      throw new Error('Backup file is empty');
+    }
+
+    // Calculate checksum
+    const fileBuffer = await fs.readFile(filePath);
+    const checksum = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+
+    // Update backup record with completion details
+    const [updatedBackup] = await db
+      .update(systemBackups)
+      .set({
+        size: stats.size,
+        status: 'completed',
+        filePath,
+        checksum,
+        completedAt: new Date(),
+      })
+      .where(eq(systemBackups.id, backup.id))
+      .returning();
+
+    // Log backup completion
+    await logBackupService(backup.id, 'SUCCESS', 'Backup completed successfully', {
+      size: stats.size,
+      checksum,
+      filePath,
+    });
+
+    return updatedBackup;
+  } catch (error) {
+    // Log error and update status
+    await logBackupService(backup.id, 'ERROR', 'Backup failed', { error: error.message });
+    await updateBackupStatusService(backup.id, 'failed');
+    throw error;
+  }
 }
 
 export async function getBackupsService(query: BackupListQueryDto) {
@@ -234,88 +297,6 @@ export async function deleteBackupScheduleService(id: string): Promise<void> {
 }
 
 // Helper functions
-async function createRealDatabaseBackup(backupId: string, type: string, tables: string[]): Promise<void> {
-  try {
-    const backup = await getBackupByIdService(backupId);
-    
-    // Create backup directory
-    const backupDir = path.join(process.cwd(), 'backups');
-    await fs.mkdir(backupDir, { recursive: true });
-    
-    const filePath = path.join(backupDir, backup.filename);
-    
-    // Get database connection details from environment
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) {
-      throw new Error('DATABASE_URL not configured');
-    }
-    
-    // Parse database URL to get connection details
-    const url = new URL(dbUrl);
-    const dbname = url.pathname.substring(1); // Remove leading slash
-    const host = url.hostname;
-    const port = url.port || '5432';
-    const username = url.username;
-    const password = url.password;
-    
-    // Build pg_dump command using the proven working format
-    let pgDumpCommand = `pg_dump --host=${host} --port=${port} --username=${username} --dbname=${dbname} --format=plain --no-owner --no-privileges --verbose`;
-    
-    // Add table specifications for partial backups
-    if (type === 'partial' && tables && tables.length > 0) {
-      pgDumpCommand += ` --table=${tables.join(' --table=')}`;
-    }
-    
-    // Add output file
-    pgDumpCommand += ` > "${filePath}"`;
-    
-    // Log backup start
-    console.log(`Starting backup: ${backup.filename}`);
-    console.log(`Command: ${pgDumpCommand}`);
-    
-    // Execute pg_dump with proper environment
-    const { exec } = require('child_process');
-    const { promisify } = require('util');
-    const execAsync = promisify(exec);
-    
-    const env = {
-      ...process.env,
-      PGPASSWORD: password
-    };
-    
-    const { stdout, stderr } = await execAsync(pgDumpCommand, { env });
-    
-    // Check if backup file was created
-    const stats = await fs.stat(filePath);
-    if (stats.size === 0) {
-      throw new Error('Backup file is empty');
-    }
-    
-    // Calculate checksum
-    const fileBuffer = await fs.readFile(filePath);
-    const checksum = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    
-    // Update backup record with completion details
-    await db
-      .update(systemBackups)
-      .set({
-        size: stats.size,
-        status: 'completed',
-        filePath,
-        checksum,
-        completedAt: new Date(),
-      })
-      .where(eq(systemBackups.id, backupId));
-    
-    console.log(`Backup completed: ${backup.filename} (${stats.size} bytes)`);
-    
-  } catch (error) {
-    console.error('Real backup creation error:', error);
-    await updateBackupStatusService(backupId, 'failed');
-    throw error;
-  }
-}
-
 async function logBackupService(backupId: string, level: string, message: string, details?: any): Promise<void> {
   const logEntry: NewBackupLog = {
     backupId,
@@ -336,7 +317,7 @@ async function updateBackupStatusService(backupId: string, status: string): Prom
 
 function calculateNextRunTime(frequency: string): Date {
   const now = new Date();
-  
+
   switch (frequency) {
     case 'hourly':
       now.setHours(now.getHours() + 1);
@@ -361,37 +342,4 @@ function calculateNextRunTime(frequency: string): Date {
   }
 
   return now;
-}
-
-function generateMockBackup(type: string, tables: string[]): string {
-  const timestamp = new Date().toISOString();
-  
-  if (type === 'full') {
-    return `-- Full Database Backup
--- Generated: ${timestamp}
--- Tables: users, applications, housing, allocations, complaints, backup_logs
-
--- This is a mock backup file
--- In production, this would contain actual SQL dump data
-
-CREATE TABLE IF NOT EXISTS users_backup AS SELECT * FROM users;
-CREATE TABLE IF NOT EXISTS applications_backup AS SELECT * FROM applications;
--- ... other tables
-`;
-  } else if (type === 'incremental') {
-    return `-- Incremental Database Backup
--- Generated: ${timestamp}
--- Type: Changes since last backup
-
--- This would contain only changed data
--- For demo purposes, showing structure
-`;
-  } else {
-    return `-- Partial Database Backup
--- Generated: ${timestamp}
--- Tables: ${tables.join(', ')}
-
--- Backup for specific tables only
-`;
-  }
 }

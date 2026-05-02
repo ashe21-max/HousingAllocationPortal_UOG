@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@tanstack/react-query'],
   },
   // Allow network access for development
-  allowedDevOrigins: ['10.139.27.157'],
+  allowedDevOrigins: ['10.139.27.220'],
   // SWC minification is enabled by default in Next.js
   // Optimize images and assets
   images: {

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Mail, Plus, UserRound } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,8 @@ import {
   roleOptions,
   type UserDepartment,
 } from "@/constants/user";
-import { createUser } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
+import { createUser } from "@/lib/api/auth";
 import type { UserRole } from "@/lib/auth/session-storage";
 import { validateEmail } from "@/lib/validation/email";
 import { validateName } from "@/lib/validation/name";
@@ -73,15 +74,10 @@ export function AdminCreateUserForm({ onCreated }: AdminCreateUserFormProps) {
     });
   }
 
+  const queryClient = useQueryClient();
+
   return (
     <>
-      {/* ✅ ONLY ADDED THIS STYLE */}
-      <style>{`
-        body {
-          background: linear-gradient(135deg, #3a86ff, #00c896, #f4a261);
-          min-height: 100vh;
-        }
-      `}</style>
 
       <div className="panel grid gap-6 p-8">
         <div className="grid gap-2">

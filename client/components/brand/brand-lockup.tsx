@@ -10,6 +10,7 @@ type BrandLockupProps = {
   logoSize?: number;
   stacked?: boolean;
   subtitle?: string;
+  title?: string;
 };
 
 function BrandContent({
@@ -20,12 +21,13 @@ function BrandContent({
   logoSize = 56,
   stacked = false,
   subtitle = "House Allocation Portal",
+  title = "University of Gondar",
 }: Omit<BrandLockupProps, "href">) {
   return (
     <div
       className={[
         "flex items-center gap-4",
-        stacked ? "flex-col items-start" : "",
+        stacked ? "flex-col items-center" : "",
         className ?? "",
       ]
         .filter(Boolean)
@@ -48,13 +50,13 @@ function BrandContent({
       <div className={["grid gap-1", textClassName ?? ""].filter(Boolean).join(" ")}>
         <span
           className={[
-            "font-mono text-[11px] uppercase tracking-[0.24em] text-muted",
+            "font-mono text-[14px] uppercase tracking-[0.24em] text-muted font-semibold",
             subtitleClassName ?? "",
           ]
             .filter(Boolean)
             .join(" ")}
         >
-          University of Gondar
+          {title}
         </span>
         <span
           className={[

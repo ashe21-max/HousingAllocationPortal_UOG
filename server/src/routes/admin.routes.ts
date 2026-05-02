@@ -20,6 +20,11 @@ import {
   updateBackupScheduleController,
   deleteBackupScheduleController,
 } from '../controller/backup.controller.js';
+import {
+  getAllocationReportsController,
+  updateAllocationReportStatusController,
+  deleteAllocationReportController,
+} from '../controller/officer.controller.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { requireRole } from '../middleware/require-role.js';
 
@@ -49,5 +54,10 @@ adminRouter.post('/backup-schedules', createBackupScheduleController);
 adminRouter.get('/backup-schedules', getBackupSchedulesController);
 adminRouter.patch('/backup-schedules/:id', updateBackupScheduleController);
 adminRouter.delete('/backup-schedules/:id', deleteBackupScheduleController);
+
+// Allocation Reports Management (for admin support)
+adminRouter.get('/reports', getAllocationReportsController);
+adminRouter.patch('/reports/:id/status', updateAllocationReportStatusController);
+adminRouter.delete('/reports/:id', deleteAllocationReportController);
 
 export { adminRouter };

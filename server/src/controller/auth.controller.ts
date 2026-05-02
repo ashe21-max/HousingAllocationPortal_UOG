@@ -6,6 +6,7 @@ import type { ResendOtpDto } from '../dtos/generate-otp.dto.js';
 import type { LoginDto } from '../dtos/login.dto.js';
 import type { SetPasswordDto } from '../dtos/set-password.dto.js';
 import type { VerifyOtpDto } from '../dtos/verify-otp.dto.js';
+import type { CreateUserDto } from '../dtos/create-user.dto.js';
 import { AppError } from '../errorHandler/app-error.js';
 import { findUserById } from '../repository/user.repository.js';
 import { initiateLogin } from '../services/initiate-login.js';
@@ -14,6 +15,7 @@ import { login } from '../services/login.js';
 import { resendOtp } from '../services/resend-otp.js';
 import { setPassword } from '../services/set-password.js';
 import { verifyOtp } from '../services/verify-otp.js';
+import { createSignupRequest } from '../services/create-signup-request.js';
 import { generateToken } from '../utils/generate-token.js';
 
 function setAuthCookie(res: Response, token: string): void {
@@ -79,6 +81,41 @@ export async function forgotPasswordController(
     const result = await forgotPassword({ email });
     res.status(200).json(result);
   } catch (error) {
+    next(error);
+  }
+}
+
+export async function signupController(
+  req: Request<unknown, unknown, Partial<CreateUserDto>>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { name, email, role, department } = req.body;
+
+    if (
+      typeof name !== 'string' ||
+      typeof email !== 'string' ||
+      typeof role !== 'string' ||
+      (department !== undefined &&
+        department !== null &&
+        typeof department !== 'string')
+    ) {
+      throw new AppError('Name, email, role, and department are invalid', 400, 'VALIDATION_ERROR');
+    }
+
+    const createdUser = await createSignupRequest({
+      name,
+      email,
+      role,
+      department: department ?? null,
+    });
+
+    res.status(201).json(createdUser);
+  } catch (error) {
+    if (error instanceof AppError && error.message.includes('already exists')) {
+      throw new AppError('Email already exists', 409, 'EMAIL_ALREADY_EXISTS');
+    }
     next(error);
   }
 }

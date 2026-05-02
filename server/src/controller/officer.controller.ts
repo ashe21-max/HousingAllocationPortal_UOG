@@ -7,11 +7,16 @@ import type {
 import { AppError } from '../errorHandler/app-error.js';
 import {
   createOfficerRound,
+  deleteAllocationReport,
+  deleteOfficerRound,
+  getAllocationReports,
   getOfficerAvailableHouses,
   getOfficerManagedRounds,
   getOfficerRoundAllocationResults,
   getOfficerRoundsReadyForAllocation,
   runOfficerRoundAllocation,
+  sendReportToAdmin,
+  updateAllocationReportStatus,
   updateOfficerRoundStatus,
 } from '../services/officer-allocation.service.js';
 
@@ -102,6 +107,47 @@ export async function updateOfficerRoundStatusController(
   }
 }
 
+export async function deleteOfficerRoundController(
+  req: Request<{ roundId: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
+    const result = await deleteOfficerRound(req.params.roundId);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function sendReportToAdminController(
+  req: Request<unknown, unknown, { roundId: string; roundName: string; allocationCount: number; reportData: any }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
+    const result = await sendReportToAdmin({
+      roundId: req.body.roundId,
+      roundName: req.body.roundName,
+      allocationCount: req.body.allocationCount,
+      reportData: req.body.reportData,
+      sentByUserId: req.user.userId,
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function listOfficerAvailableHousesController(
   req: Request,
   res: Response,
@@ -148,6 +194,62 @@ export async function listOfficerRoundAllocationResultsController(
 
     const results = await getOfficerRoundAllocationResults(req.params.roundId);
     res.status(200).json(results);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAllocationReportsController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
+    const reports = await getAllocationReports();
+    res.status(200).json(reports);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateAllocationReportStatusController(
+  req: Request<{ id: string }, unknown, { status: string; adminNotes?: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
+    const result = await updateAllocationReportStatus(
+      req.params.id,
+      req.body.status,
+      req.body.adminNotes,
+      req.user.userId,
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteAllocationReportController(
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
+    const result = await deleteAllocationReport(req.params.id);
+    res.status(200).json({ message: 'Report deleted successfully' });
   } catch (error) {
     next(error);
   }

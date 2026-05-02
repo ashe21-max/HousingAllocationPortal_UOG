@@ -1,6 +1,5 @@
-import Image from "next/image";
 import { BrandLockup } from "@/components/brand/brand-lockup";
-import { Shield, Sparkles, Zap, Users, Building2, Award } from "lucide-react";
+import { Shield, Sparkles, Zap, Users, Award } from "lucide-react";
 
 export default function AuthLayout({
   children,
@@ -23,13 +22,17 @@ export default function AuthLayout({
           {/* Content Overlay */}
           <div className="relative z-10 flex flex-col justify-between h-full p-8 lg:p-12">
             {/* Top Section */}
-            <div className="space-y-8 animate-slide-in-left">
-              <BrandLockup
-                logoSize={64}
-                subtitle="Housing Allocation Portal"
-                subtitleClassName="text-white/90"
-                titleClassName="text-white text-3xl lg:text-4xl font-bold"
-              />
+            <div className="space-y-8 animate-slide-in-center">
+              <div className="flex justify-center">
+                <BrandLockup
+                  logoSize={68}
+                  subtitle="House Allocation Portal"
+                  subtitleClassName="text-white/90"
+                  titleClassName="text-white text-3xl lg:text-4xl font-bold"
+                  stacked={true}
+                  className="text-center"
+                />
+              </div>
               
               {/* Feature Cards */}
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -84,7 +87,7 @@ export default function AuthLayout({
                 <div className="grid grid-cols-3 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-white">500+</div>
-                    <div className="text-white/80 text-xs">Active Users</div>
+                    <div className="text-white/80 text-xs"> Users</div>
                   </div>
                  
                   <div className="text-center">

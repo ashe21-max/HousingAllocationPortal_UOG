@@ -128,7 +128,7 @@ export async function submitApplication(
 }
 
 export async function findMyApplications(userId: string) {
-  return db
+  const applicationsData = await db
     .select({
       ...applicationSelection,
       roundName: applicationRounds.name,
@@ -147,6 +147,28 @@ export async function findMyApplications(userId: string) {
     .leftJoin(scoreSnapshots, eq(applications.scoreSnapshotId, scoreSnapshots.id))
     .where(eq(applications.userId, userId))
     .orderBy(desc(applications.createdAt));
+
+  // Extract final score from notes if available, otherwise use score snapshot
+  return applicationsData.map((app) => {
+    let finalScore = app.attachedScoreFinal;
+    
+    if (app.notes) {
+      try {
+        const parsedNotes = JSON.parse(app.notes);
+        if (parsedNotes.score && parsedNotes.score.final !== undefined) {
+          finalScore = parsedNotes.score.final;
+        }
+      } catch (e) {
+        // If notes can't be parsed, use the snapshot score
+        console.log('Could not parse application notes for score:', e);
+      }
+    }
+    
+    return {
+      ...app,
+      attachedScoreFinal: finalScore,
+    };
+  });
 }
 
 export async function findActiveRoundsForLecturer() {
@@ -161,8 +183,7 @@ export async function findActiveRoundsForLecturer() {
     .from(applicationRounds)
     .where(inArray(applicationRounds.status, ['DRAFT', 'OPEN']))
     .orderBy(desc(applicationRounds.startsAt));
-    
-  console.log('Active rounds found:', rounds);
+
   return rounds;
 }
 
@@ -192,4 +213,24 @@ export async function findDepartmentAllocationResults(department: string) {
     .leftJoin(housingUnits, eq(allocationResults.housingUnitId, housingUnits.id))
     .where(eq(users.department, department))
     .orderBy(desc(allocationResults.allocatedAt), users.name);
+}
+
+export async function deleteApplicationByIdAndUser(
+  applicationId: string,
+  userId: string,
+) {
+  console.log('Deleting application:', { applicationId, userId });
+  
+  const [deleted] = await db
+    .delete(applications)
+    .where(and(eq(applications.id, applicationId), eq(applications.userId, userId)))
+    .returning(applicationSelection);
+
+  if (deleted) {
+    console.log('Application deleted successfully:', deleted.id);
+  } else {
+    console.log('Application not found or already deleted');
+  }
+
+  return deleted ?? null;
 }

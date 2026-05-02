@@ -109,3 +109,9 @@ export async function getApplicationFormOptions() {
 export async function getMyDepartmentResults() {
   return apiRequest<DepartmentAllocationResultRow[]>("/applications/results/department");
 }
+
+export async function deleteApplication(applicationId: string) {
+  return apiRequest<{ id: string }>(`/applications/${applicationId}`, {
+    method: "DELETE",
+  });
+}

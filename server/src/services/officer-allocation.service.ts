@@ -4,8 +4,11 @@ import type {
   UpdateOfficerRoundStatusDto,
 } from '../dtos/officer-round.dto.js';
 import {
-  createApplicationRound,
   clearRoundAllocationResults,
+  createApplicationRound,
+  deleteApplicationRound,
+  deleteAllocationReport as deleteAllocationReportRepo,
+  findAllAllocationReports,
   findAllApplicationRounds,
   findAvailableHousingUnits,
   findExistingRoundAllocationHousingUnitIds,
@@ -16,6 +19,8 @@ import {
   insertAllocationResults,
   markApplicationsAllocated,
   markHousingUnitsStatus,
+  saveAllocationReport,
+  updateAllocationReportStatus as updateAllocationReportStatusRepo,
   updateApplicationRoundStatus,
 } from '../repository/officer.repository.js';
 import { validateOfficerRoundId } from '../validators/officer.validator.js';
@@ -65,6 +70,56 @@ export async function updateOfficerRoundStatus(
     throw new AppError('Round not found', 404, 'ROUND_NOT_FOUND');
   }
   return updated;
+}
+
+export async function deleteOfficerRound(roundIdInput: string) {
+  const roundId = validateOfficerRoundId(roundIdInput);
+
+  const round = await findRoundById(roundId);
+  if (!round) {
+    throw new AppError('Round not found', 404, 'ROUND_NOT_FOUND');
+  }
+
+  await deleteApplicationRound(roundId);
+
+  return { message: 'Round deleted successfully' };
+}
+
+export async function sendReportToAdmin(input: {
+  roundId: string;
+  roundName: string;
+  allocationCount: number;
+  reportData: any;
+  sentByUserId: string;
+}) {
+  const round = await findRoundById(input.roundId);
+  if (!round) {
+    throw new AppError('Round not found', 404, 'ROUND_NOT_FOUND');
+  }
+
+  const report = await saveAllocationReport({
+    roundId: input.roundId,
+    roundName: input.roundName,
+    roundStatus: round.status,
+    committeeRankingStatus: round.committeeRankingStatus,
+    allocationCount: input.allocationCount,
+    reportData: input.reportData,
+    sentByUserId: input.sentByUserId,
+  });
+
+  return { message: 'Report sent to admin support successfully', reportId: report.id };
+}
+
+export async function getAllocationReports() {
+  return findAllAllocationReports();
+}
+
+export async function updateAllocationReportStatus(id: string, status: string, adminNotes?: string, reviewedByUserId?: string) {
+  return updateAllocationReportStatusRepo(id, status, adminNotes, reviewedByUserId);
+}
+
+export async function deleteAllocationReport(id: string) {
+  return deleteAllocationReportRepo(id);
 }
 
 export async function getOfficerAvailableHouses() {

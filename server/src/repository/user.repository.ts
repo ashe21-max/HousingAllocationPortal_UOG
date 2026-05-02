@@ -35,6 +35,7 @@ export async function findUserById(userId: string) {
 
 export async function createAdminManagedUser(
   input: CreateUserDto,
+  isActive = true,
 ): Promise<CreatedUserDto | null> {
   const [createdUser] = await db
     .insert(users)
@@ -45,7 +46,7 @@ export async function createAdminManagedUser(
       role: input.role,
       department: input.department ?? null,
       isVerified: false,
-      isActive: true,
+      isActive,
     })
     .returning({
       id: users.id,

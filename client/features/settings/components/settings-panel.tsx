@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiRequest } from "@/lib/api/client";
-import { getRoleConfig, getDefaultPageOptions, getNotificationOptions } from "@/lib/config/role-config";
+import { getRoleConfig, getDefaultPageOptions } from "@/lib/config/role-config";
 import { AuthContext } from "@/providers/auth-provider";
 import { useContext } from "react";
 import { 
@@ -64,7 +64,6 @@ function SettingsPanel() {
   const userRole = session?.role || 'LECTURER';
   const roleConfig = getRoleConfig(userRole);
   const defaultPageOptions = getDefaultPageOptions(userRole);
-  const notificationOptions = getNotificationOptions(userRole);
   
   const [settings, setSettings] = useState<UserSettingsData>({
     personal: {
@@ -97,12 +96,91 @@ function SettingsPanel() {
     },
   });
 
+  // Apply user-specific theme on component mount and when theme changes
   useEffect(() => {
     loadUserSettings();
-    // Initialize theme from localStorage or system preference
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' || 'system';
-    applyTheme(savedTheme);
+    initializeUserTheme();
   }, []);
+
+  const initializeUserTheme = () => {
+    // Only load theme if we're in a dashboard (not login page)
+    if (!window.location.pathname.includes('/dashboard')) {
+      return;
+    }
+    
+    // Get current user ID from session
+    const userId = session?.email || 'anonymous';
+    
+    // Check for saved user-specific theme
+    const savedUserTheme = localStorage.getItem(`uog-theme-${userId}`) as 'light' | 'dark' | 'system' || 'system';
+    applyUserTheme(savedUserTheme);
+    
+    // Listen for system theme changes
+    if (savedUserTheme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      mediaQuery.addEventListener('change', handleSystemThemeChange);
+    }
+  };
+
+  const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+    // Only apply theme if we're in a dashboard (not login page)
+    if (!window.location.pathname.includes('/dashboard')) {
+      return;
+    }
+    
+    const root = document.documentElement;
+    const body = document.body;
+    
+    if (e.matches) {
+      body.classList.add('dark-theme');
+      body.classList.remove('light-theme');
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      body.classList.add('light-theme');
+      body.classList.remove('dark-theme');
+      root.setAttribute('data-theme', 'light');
+    }
+  };
+
+  const applyUserTheme = (theme: 'light' | 'dark' | 'system') => {
+    // Only apply theme if we're in a dashboard (not login page)
+    if (!window.location.pathname.includes('/dashboard')) {
+      return;
+    }
+    
+    const root = document.documentElement;
+    const body = document.body;
+    
+    if (theme === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      
+      if (prefersDark) {
+        body.classList.add('dark-theme');
+        body.classList.remove('light-theme');
+      } else {
+        body.classList.add('light-theme');
+        body.classList.remove('dark-theme');
+      }
+    } else {
+      root.classList.remove('dark-theme');
+      root.classList.remove('light-theme');
+      body.classList.remove('dark-theme');
+      body.classList.remove('light-theme');
+      
+      if (theme === 'dark') {
+        body.classList.add('dark-theme');
+        root.setAttribute('data-theme', 'dark');
+      } else if (theme === 'light') {
+        body.classList.add('light-theme');
+        root.setAttribute('data-theme', 'light');
+      }
+    }
+    
+    // Save user-specific theme preference
+    const userId = session?.email || 'anonymous';
+    localStorage.setItem(`uog-theme-${userId}`, theme);
+  };
 
   const loadUserSettings = async () => {
     setIsLoading(true);
@@ -158,12 +236,12 @@ function SettingsPanel() {
       });
       
       setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (error) {
       console.error('Failed to save settings:', error);
       // Show saved status even if server fails (demo mode)
       setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      setTimeout(() => setSaveStatus('idle'), 2000);
     }
   };
 
@@ -297,17 +375,6 @@ function SettingsPanel() {
     localStorage.setItem('userSettings', JSON.stringify(updatedSettings));
     
     alert('Password updated successfully!');
-    
-    // Try backend but don't fail if it doesn't work
-    apiRequest('/settings/password', {
-      method: 'POST',
-      body: {
-        currentPassword: settings.security.currentPassword,
-        newPassword: settings.security.newPassword
-      }
-    }).catch(error => {
-      console.log('Backend not available, password updated locally');
-    });
   };
 
   const updatePreferences = (field: string, value: any) => {
@@ -316,10 +383,10 @@ function SettingsPanel() {
       ...prev,
       preferences: { 
         ...(prev.preferences || {
-          theme: 'system',
+          theme: roleConfig.theme.default,
           language: 'english',
-          defaultPage: 'my-applications',
-          itemsPerPage: 25,
+          defaultPage: Object.keys(roleConfig.defaultPages)[0],
+          itemsPerPage: roleConfig.itemsPerPage.default,
           autoSave: true,
           compactMode: false
         }), 
@@ -329,7 +396,7 @@ function SettingsPanel() {
 
     // Apply theme change immediately if it's a theme preference
     if (field === 'theme') {
-      applyTheme(value as 'light' | 'dark' | 'system');
+      applyUserTheme(value as 'light' | 'dark' | 'system');
     }
 
     // Save to localStorage for persistence
@@ -360,90 +427,40 @@ function SettingsPanel() {
     setTimeout(() => setSaveStatus('idle'), 2000);
   };
 
-  const applyTheme = (theme: 'light' | 'dark' | 'system') => {
-    const root = document.documentElement;
-    const body = document.body;
-    
-    if (theme === 'system') {
-      // Use system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-      
-      if (prefersDark) {
-        body.classList.add('dark-theme');
-        body.classList.remove('light-theme');
-      } else {
-        body.classList.add('light-theme');
-        body.classList.remove('dark-theme');
-      }
-    } else {
-      root.setAttribute('data-theme', theme);
-      
-      if (theme === 'dark') {
-        body.classList.add('dark-theme');
-        body.classList.remove('light-theme');
-      } else {
-        body.classList.add('light-theme');
-        body.classList.remove('dark-theme');
-      }
-    }
-    
-    // Store preference
-    localStorage.setItem('theme', theme);
-    
-    // Listen for system theme changes
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      mediaQuery.addEventListener('change', (e) => {
-        if (e.matches) {
-          body.classList.add('dark-theme');
-          body.classList.remove('light-theme');
-          root.setAttribute('data-theme', 'dark');
-        } else {
-          body.classList.add('light-theme');
-          body.classList.remove('dark-theme');
-          root.setAttribute('data-theme', 'light');
-        }
-      });
-    }
-  };
-
   return (
     <div className="page-shell">
       <div className="container animate-fade-in">
         {/* Header */}
         <Card variant="elevated" className="mb-8">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-[var(--color-blue)] to-[var(--color-blue-dark)] rounded-xl flex items-center justify-center">
-                  <SettingsIcon className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <CardTitle size="lg" className="text-[var(--foreground)]">Settings</CardTitle>
-                  <CardDescription>Manage your account settings and preferences</CardDescription>
-                </div>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-[var(--color-blue)] to-[var(--color-blue-dark)] rounded-xl flex items-center justify-center">
+                <SettingsIcon className="w-6 h-6 text-white" />
               </div>
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={loadUserSettings} 
-                  disabled={isLoading}
-                  className="hover:bg-[var(--color-blue)]/10"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                </Button>
-                <Button 
-                  variant="primary" 
-                  onClick={saveSettings} 
-                  disabled={saveStatus === 'saving'}
-                  busy={saveStatus === 'saving'}
-                >
-                  <Save className="w-4 h-4" />
-                  {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
-                </Button>
+              <div>
+                <CardTitle size="lg" className="text-[var(--foreground)]">Settings</CardTitle>
+                <CardDescription>Manage your account settings and preferences</CardDescription>
               </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={loadUserSettings} 
+                disabled={isLoading}
+                className="hover:bg-[var(--color-blue)]/10"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={saveSettings} 
+                disabled={saveStatus === 'saving'}
+                busy={saveStatus === 'saving'}
+              >
+                <Save className="w-4 h-4" />
+                {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
+              </Button>
             </div>
           </CardHeader>
           
@@ -571,7 +588,7 @@ function SettingsPanel() {
                     </div>
                     <div>
                       <CardTitle>Notifications</CardTitle>
-                      <CardDescription>Manage your notification preferences and compliance alerts</CardDescription>
+                      <CardDescription>Manage your notification preferences</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -587,51 +604,33 @@ function SettingsPanel() {
                         Stay informed about important notifications specific to your role.
                       </p>
                       <div className="space-y-2">
-                        {notificationOptions.map((notification) => (
-                          <label key={notification.value} className="flex items-center gap-3 p-3 bg-white rounded-[var(--radius-md)] border border-[var(--border)] cursor-pointer">
+                        {[
+                          { key: 'emailNotifications', label: 'Email Notifications', description: 'Receive updates and alerts via email', color: 'blue' },
+                          { key: 'pushNotifications', label: 'Push Notifications', description: 'Receive push notifications in your browser', color: 'green' },
+                          { key: 'smsNotifications', label: 'SMS Notifications', description: 'Receive updates via SMS', color: 'yellow' },
+                        ].map((setting) => (
+                          <label 
+                            key={setting.key}
+                            className="flex items-center justify-between p-4 border border-[var(--border)] rounded-[var(--radius-lg)] hover:bg-[var(--surface-muted)] cursor-pointer transition-all duration-[var(--transition-normal)] group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 bg-[var(--color-${setting.color})]/10 rounded-lg flex items-center justify-center`}>
+                                <Mail className="w-5 h-5 text-[var(--color-${setting.color})]" />
+                              </div>
+                              <div>
+                                <div className="font-medium text-[var(--foreground)]">{setting.label}</div>
+                                <div className="text-sm text-[var(--foreground-tertiary)]">{setting.description}</div>
+                              </div>
+                            </div>
                             <input
                               type="checkbox"
-                              defaultChecked={notification.enabled}
-                              className="w-4 h-4 text-[var(--color-blue)] rounded focus:ring-[var(--color-blue)]/20"
+                              checked={settings.notifications[setting.key as keyof typeof settings.notifications]}
+                              onChange={(e) => updateNotifications(setting.key, e.target.checked)}
+                              className="w-5 h-5 text-[var(--color-blue)] rounded focus:ring-[var(--color-blue)]/20"
                             />
-                            <div className="flex-1">
-                              <div className="font-medium text-[var(--foreground)]">{notification.label}</div>
-                              <div className="text-sm text-[var(--foreground-tertiary)]">{notification.description}</div>
-                            </div>
                           </label>
                         ))}
                       </div>
-                    </div>
-
-                    {/* Notification Preferences */}
-                    <div className="space-y-4">
-                      <div className="font-medium text-[var(--foreground)] mb-3">Communication Preferences</div>
-                      {[
-                        { key: 'emailNotifications', label: 'Email Notifications', description: 'Receive updates and alerts via email', color: 'blue' },
-                        { key: 'pushNotifications', label: 'Push Notifications', description: 'Receive push notifications in your browser', color: 'green' },
-                        { key: 'smsNotifications', label: 'SMS Notifications', description: 'Receive updates via SMS', color: 'yellow' },
-                      ].map((setting) => (
-                        <label 
-                          key={setting.key}
-                          className="flex items-center justify-between p-4 border border-[var(--border)] rounded-[var(--radius-lg)] hover:bg-[var(--surface-muted)] cursor-pointer transition-all duration-[var(--transition-normal)] group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 bg-[var(--color-${setting.color})]/10 rounded-lg flex items-center justify-center`}>
-                              <Mail className="w-5 h-5 text-[var(--color-${setting.color})]" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-[var(--foreground)]">{setting.label}</div>
-                              <div className="text-sm text-[var(--foreground-tertiary)]">{setting.description}</div>
-                            </div>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={settings.notifications[setting.key as keyof typeof settings.notifications]}
-                            onChange={(e) => updateNotifications(setting.key, e.target.checked)}
-                            className="w-5 h-5 text-[var(--color-blue)] rounded focus:ring-[var(--color-blue)]/20"
-                          />
-                        </label>
-                      ))}
                     </div>
                   </div>
                 </CardContent>
@@ -693,31 +692,6 @@ function SettingsPanel() {
                         Forgot Password?
                       </Button>
                     </div>
-
-                    <div className="p-4 bg-[var(--color-green)]/10 border border-[var(--color-green)]/20 rounded-[var(--radius-lg)]">
-                      <div className="flex items-center gap-3 mb-3">
-                        <CheckCircle className="w-5 h-5 text-[var(--color-green)]" />
-                        <div className="font-medium text-[var(--color-green-dark)]">Security Tips</div>
-                      </div>
-                      <ul className="space-y-2 text-sm text-[var(--foreground-secondary)]">
-                        <li className="flex items-start gap-2">
-                          <div className="w-1 h-1 bg-[var(--color-green)] rounded-full mt-2 flex-shrink-0"></div>
-                          Use strong passwords with at least 8 characters
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <div className="w-1 h-1 bg-[var(--color-green)] rounded-full mt-2 flex-shrink-0"></div>
-                          Include uppercase, lowercase, numbers, and symbols
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <div className="w-1 h-1 bg-[var(--color-green)] rounded-full mt-2 flex-shrink-0"></div>
-                          Never share your password with anyone
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <div className="w-1 h-1 bg-[var(--color-green)] rounded-full mt-2 flex-shrink-0"></div>
-                          Change your password regularly
-                        </li>
-                      </ul>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -762,7 +736,13 @@ function SettingsPanel() {
                             <option value="system">System Default</option>
                           </select>
                         </label>
-                        
+                      </div>
+                    </div>
+
+                    {/* Language Preferences */}
+                    <div>
+                      <div className="font-medium text-[var(--foreground)] mb-3">Language</div>
+                      <div className="space-y-3">
                         <label className="flex items-center justify-between p-4 border border-[var(--border)] rounded-[var(--radius-lg)] hover:bg-[var(--surface-muted)] cursor-pointer">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-[var(--color-green)]/10 rounded-lg flex items-center justify-center">
@@ -782,100 +762,6 @@ function SettingsPanel() {
                             <option value="amharic">Amharic</option>
                             <option value="other">Other</option>
                           </select>
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* Dashboard Preferences */}
-                    <div>
-                      <div className="font-medium text-[var(--foreground)] mb-3">Dashboard</div>
-                      <div className="space-y-3">
-                        <label className="flex items-center justify-between p-4 border border-[var(--border)] rounded-[var(--radius-lg)] hover:bg-[var(--surface-muted)] cursor-pointer">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[var(--color-purple)]/10 rounded-lg flex items-center justify-center">
-                              <SettingsIcon className="w-5 h-5 text-[var(--color-purple)]" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-[var(--foreground)]">Default Page</div>
-                              <div className="text-sm text-[var(--foreground-tertiary)]">Choose your dashboard landing page</div>
-                            </div>
-                          </div>
-                          <select 
-                            className="ml-4 px-3 py-2 border border-[var(--border)] rounded-[var(--radius-md)] bg-white"
-                            value={settings.preferences?.defaultPage || Object.keys(roleConfig.defaultPages)[0]}
-                            onChange={(e) => updatePreferences('defaultPage', e.target.value)}
-                          >
-                            {defaultPageOptions.map((page) => (
-                              <option key={page.value} value={page.value}>
-                                {page.label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        
-                        <label className="flex items-center justify-between p-4 border border-[var(--border)] rounded-[var(--radius-lg)] hover:bg-[var(--surface-muted)] cursor-pointer">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[var(--color-orange)]/10 rounded-lg flex items-center justify-center">
-                              <SettingsIcon className="w-5 h-5 text-[var(--color-orange)]" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-[var(--foreground)]">Items Per Page</div>
-                              <div className="text-sm text-[var(--foreground-tertiary)]">Number of items to display in lists</div>
-                            </div>
-                          </div>
-                          <select 
-                            className="ml-4 px-3 py-2 border border-[var(--border)] rounded-[var(--radius-md)] bg-white"
-                            value={settings.preferences?.itemsPerPage || roleConfig.itemsPerPage.default}
-                            onChange={(e) => updatePreferences('itemsPerPage', parseInt(e.target.value))}
-                          >
-                            {roleConfig.itemsPerPage.options.map((count) => (
-                              <option key={count} value={count}>
-                                {count}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* System Preferences */}
-                    <div>
-                      <div className="font-medium text-[var(--foreground)] mb-3">System</div>
-                      <div className="space-y-3">
-                        <label className="flex items-center justify-between p-4 border border-[var(--border)] rounded-[var(--radius-lg)] hover:bg-[var(--surface-muted)] cursor-pointer">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[var(--color-red)]/10 rounded-lg flex items-center justify-center">
-                              <SettingsIcon className="w-5 h-5 text-[var(--color-red)]" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-[var(--foreground)]">Auto-save</div>
-                              <div className="text-sm text-[var(--foreground-tertiary)]">Automatically save your work</div>
-                            </div>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={settings.preferences?.autoSave ?? true}
-                            onChange={(e) => updatePreferences('autoSave', e.target.checked)}
-                            className="w-5 h-5 text-[var(--color-blue)] rounded focus:ring-[var(--color-blue)]/20"
-                          />
-                        </label>
-                        
-                        <label className="flex items-center justify-between p-4 border border-[var(--border)] rounded-[var(--radius-lg)] hover:bg-[var(--surface-muted)] cursor-pointer">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[var(--color-indigo)]/10 rounded-lg flex items-center justify-center">
-                              <SettingsIcon className="w-5 h-5 text-[var(--color-indigo)]" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-[var(--foreground)]">Compact Mode</div>
-                              <div className="text-sm text-[var(--foreground-tertiary)]">Use more compact interface</div>
-                            </div>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={settings.preferences?.compactMode ?? false}
-                            onChange={(e) => updatePreferences('compactMode', e.target.checked)}
-                            className="w-5 h-5 text-[var(--color-blue)] rounded focus:ring-[var(--color-blue)]/20"
-                          />
                         </label>
                       </div>
                     </div>

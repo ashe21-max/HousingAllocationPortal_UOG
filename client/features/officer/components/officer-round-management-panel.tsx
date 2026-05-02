@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api/client";
 import {
   createOfficerRound,
+  deleteOfficerRound,
   getOfficerManagedRounds,
   updateOfficerRoundStatus,
 } from "@/lib/api/officer";
@@ -59,6 +61,20 @@ export function OfficerRoundManagementPanel() {
     },
     onError: (error) => {
       const message = error instanceof ApiError ? error.message : "Could not update round status.";
+      toast.error(message);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteOfficerRound,
+    onSuccess: () => {
+      toast.success("Round deleted permanently.");
+      queryClient.invalidateQueries({ queryKey: ["officer-managed-rounds"] });
+      queryClient.invalidateQueries({ queryKey: ["officer-rounds"] });
+      queryClient.invalidateQueries({ queryKey: ["application-form-options"] });
+    },
+    onError: (error) => {
+      const message = error instanceof ApiError ? error.message : "Could not delete round.";
       toast.error(message);
     },
   });
@@ -161,7 +177,7 @@ export function OfficerRoundManagementPanel() {
                     Window
                   </th>
                   <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted text-right">
-                    Action
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -181,7 +197,7 @@ export function OfficerRoundManagementPanel() {
                       {new Date(round.startsAt).toLocaleString()} -{" "}
                       {new Date(round.endsAt).toLocaleString()}
                     </td>
-                    <td className="px-4 py-4 text-right">
+                    <td className="px-4 py-4 text-right space-x-2">
                       <Select
                         label=""
                         className="inline-flex w-36"
@@ -203,6 +219,16 @@ export function OfficerRoundManagementPanel() {
                           { label: "ARCHIVED", value: "ARCHIVED" },
                         ]}
                       />
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => deleteMutation.mutate(round.id)}
+                        busy={deleteMutation.isPending}
+                        className="gap-1"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </Button>
                     </td>
                   </tr>
                 ))}

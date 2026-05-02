@@ -19,6 +19,7 @@ import {
   submitRoundPreliminary,
   type CommitteeApplicationStatus,
 } from "@/lib/api/committee";
+import { getOfficerManagedRounds } from "@/lib/api/officer";
 
 type StatusFilter = "" | CommitteeApplicationStatus;
 
@@ -38,6 +39,11 @@ export function CommitteeReviewWorkspace() {
       getCommitteeApplications({
         status: statusFilter || undefined,
       }),
+  });
+
+  const roundsQuery = useQuery({
+    queryKey: ["officer-managed-rounds"],
+    queryFn: getOfficerManagedRounds,
   });
 
   const detailsQuery = useQuery({
@@ -74,7 +80,13 @@ export function CommitteeReviewWorkspace() {
   });
 
   const generateRankingMutation = useMutation({
-    mutationFn: (roundId: string) => generateRoundRanking(roundId),
+    mutationFn: (roundId: string) => {
+      const round = roundsQuery.data?.find((r) => r.id === roundId);
+      if (round?.status !== "OPEN") {
+        throw new Error("Only OPEN rounds can generate ranking.");
+      }
+      return generateRoundRanking(roundId);
+    },
     onSuccess: () => {
       toast.success("Round ranking generated.");
       queryClient.invalidateQueries({
@@ -84,20 +96,25 @@ export function CommitteeReviewWorkspace() {
     },
     onError: (error) => {
       const message =
-        error instanceof ApiError ? error.message : "Could not generate ranking.";
+        error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Could not generate ranking.";
       toast.error(message);
     },
   });
 
   const saveRankingMutation = useMutation({
-    mutationFn: (roundId: string) =>
-      saveRoundRanking(
+    mutationFn: (roundId: string) => {
+      const round = roundsQuery.data?.find((r) => r.id === roundId);
+      if (round?.status !== "OPEN") {
+        throw new Error("Only OPEN rounds can save ranking.");
+      }
+      return saveRoundRanking(
         roundId,
         Object.entries(manualRanks).map(([applicationId, rankPosition]) => ({
           applicationId,
           rankPosition,
         })),
-      ),
+      );
+    },
     onSuccess: () => {
       toast.success("Manual ranking saved.");
       queryClient.invalidateQueries({
@@ -106,13 +123,19 @@ export function CommitteeReviewWorkspace() {
     },
     onError: (error) => {
       const message =
-        error instanceof ApiError ? error.message : "Could not save ranking.";
+        error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Could not save ranking.";
       toast.error(message);
     },
   });
 
   const preliminaryMutation = useMutation({
-    mutationFn: (roundId: string) => submitRoundPreliminary(roundId),
+    mutationFn: (roundId: string) => {
+      const round = roundsQuery.data?.find((r) => r.id === roundId);
+      if (round?.status !== "OPEN") {
+        throw new Error("Only OPEN rounds can submit preliminary ranking.");
+      }
+      return submitRoundPreliminary(roundId);
+    },
     onSuccess: () => {
       toast.success("Preliminary ranking submitted.");
     },
@@ -120,13 +143,19 @@ export function CommitteeReviewWorkspace() {
       const message =
         error instanceof ApiError
           ? error.message
-          : "Could not submit preliminary ranking.";
+          : error instanceof Error ? error.message : "Could not submit preliminary ranking.";
       toast.error(message);
     },
   });
 
   const finalMutation = useMutation({
-    mutationFn: (roundId: string) => submitRoundFinal(roundId),
+    mutationFn: (roundId: string) => {
+      const round = roundsQuery.data?.find((r) => r.id === roundId);
+      if (round?.status !== "OPEN") {
+        throw new Error("Only OPEN rounds can submit final ranking.");
+      }
+      return submitRoundFinal(roundId);
+    },
     onSuccess: () => {
       toast.success("Final ranking submitted.");
       queryClient.invalidateQueries({ queryKey: ["committee-applications"] });
@@ -136,7 +165,7 @@ export function CommitteeReviewWorkspace() {
     },
     onError: (error) => {
       const message =
-        error instanceof ApiError ? error.message : "Could not submit final ranking.";
+        error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Could not submit final ranking.";
       toast.error(message);
     },
   });
@@ -163,14 +192,17 @@ export function CommitteeReviewWorkspace() {
   );
 
   const roundOptions = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const row of queueQuery.data ?? []) {
-      map.set(row.roundId, row.roundName ?? row.roundId);
-    }
-    return [{ label: "Select round", value: "" }].concat(
-      Array.from(map.entries()).map(([value, label]) => ({ value, label })),
-    );
-  }, [queueQuery.data]);
+    return [
+      { label: "Select round", value: "" },
+      ...(roundsQuery.data?.map((round) => ({
+        label: `${round.name} (${round.status} - ${round.committeeRankingStatus})`,
+        value: round.id,
+      })) ?? []),
+    ];
+  }, [roundsQuery.data]);
+
+  const selectedRound = roundsQuery.data?.find((r) => r.id === selectedRoundId);
+  const canRunRanking = selectedRound?.status === "OPEN";
 
   useEffect(() => {
     if (!selectedRoundId && roundOptions.length > 1) {
@@ -418,7 +450,7 @@ export function CommitteeReviewWorkspace() {
               variant="secondary"
               onClick={() => generateRankingMutation.mutate(selectedRoundId)}
               busy={generateRankingMutation.isPending}
-              disabled={!selectedRoundId}
+              disabled={!selectedRoundId || !canRunRanking}
             >
               Generate by Score
             </Button>
@@ -427,7 +459,7 @@ export function CommitteeReviewWorkspace() {
               variant="secondary"
               onClick={() => saveRankingMutation.mutate(selectedRoundId)}
               busy={saveRankingMutation.isPending}
-              disabled={!selectedRoundId || !rankingQuery.data || rankingQuery.data.length === 0}
+              disabled={!selectedRoundId || !canRunRanking || !rankingQuery.data || rankingQuery.data.length === 0}
             >
               Save Manual Ranking
             </Button>
@@ -435,7 +467,7 @@ export function CommitteeReviewWorkspace() {
               size="sm"
               onClick={() => preliminaryMutation.mutate(selectedRoundId)}
               busy={preliminaryMutation.isPending}
-              disabled={!selectedRoundId}
+              disabled={!selectedRoundId || !canRunRanking}
             >
               Send Preliminary
             </Button>
@@ -444,11 +476,17 @@ export function CommitteeReviewWorkspace() {
               variant="danger"
               onClick={() => finalMutation.mutate(selectedRoundId)}
               busy={finalMutation.isPending}
-              disabled={!selectedRoundId}
+              disabled={!selectedRoundId || !canRunRanking}
             >
               Submit Final Rank
             </Button>
           </div>
+
+          {selectedRound && !canRunRanking && (
+            <div className="mt-2 text-sm text-[var(--color-danger)]">
+              Round must be in OPEN status to perform ranking operations.
+            </div>
+          )}
         </div>
         {rankingQuery.isLoading ? (
           <div className="p-8 text-sm text-muted">Loading ranking...</div>

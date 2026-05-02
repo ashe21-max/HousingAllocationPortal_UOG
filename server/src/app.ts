@@ -2,6 +2,7 @@ import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { type Application, type Request, type Response } from 'express';
+import { networkInterfaces } from 'os';
 import { handleError } from './errorHandler/handle-error.js';
 import { apiRouter } from './routes/index.js';
 
@@ -49,7 +50,22 @@ app.use(handleError);
 
 const server = app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Server is running on http://localhost:${PORT}`);
-  console.log(`Server also accessible at http://10.139.27.157:${PORT}`);
+  
+  // Get the actual network IP address
+  const nets = networkInterfaces();
+  let networkIP = '127.0.0.1';
+  
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        networkIP = net.address;
+        break;
+      }
+    }
+    if (networkIP !== '127.0.0.1') break;
+  }
+  
+  console.log(`Server also accessible at http://${networkIP}:${PORT}`);
   console.log('Press Ctrl+C to stop the server');
 });
 

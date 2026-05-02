@@ -4,12 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, 
-  Mail, 
-  ShieldAlert, 
   KeyRound, 
-  Lock, 
   MailCheck, 
-  ArrowRight,
   AlertCircle,
   CheckCircle2,
   Loader2,
@@ -182,13 +178,7 @@ export function ForgotPasswordPanel() {
                 <p className="text-xs text-[var(--foreground-tertiary)] mb-2">
                   Need additional help?
                 </p>
-                <div className="flex justify-center gap-4">
-                 
-                  <span className="text-[var(--foreground-tertiary)]">|</span>
-                  <Link href="/auth/login" className="text-[var(--color-green)] hover:text-[var(--color-green-dark)] text-xs transition-colors duration-[var(--transition-fast)]">
-                    Back to Login
-                  </Link>
-                </div>
+                
               </div>
             </div>
           </CardContent>

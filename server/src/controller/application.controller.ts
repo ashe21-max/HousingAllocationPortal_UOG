@@ -8,6 +8,7 @@ import {
   getMyApplications,
   saveMyApplicationDraft,
   submitMyApplication,
+  deleteMyApplication,
 } from '../services/application.service.js';
 
 export async function saveApplicationDraftController(
@@ -77,6 +78,23 @@ export async function getMyApplicationsController(
 
     const applications = await getMyApplications(req.user.userId);
     res.status(200).json(applications);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteApplicationController(
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
+    const deleted = await deleteMyApplication(req.user.userId, req.params.id);
+    res.status(200).json(deleted);
   } catch (error) {
     next(error);
   }

@@ -79,6 +79,12 @@ export async function updateOfficerRoundStatus(
   });
 }
 
+export async function deleteOfficerRound(roundId: string) {
+  return apiRequest<{ message: string }>(`/officer/rounds/${roundId}`, {
+    method: "DELETE",
+  });
+}
+
 export async function getOfficerAvailableHouses() {
   return apiRequest<OfficerAvailableHouse[]>("/officer/available-houses");
 }
@@ -100,4 +106,16 @@ export async function runOfficerAllocation(roundId: string) {
 
 export async function getOfficerAllocationResults(roundId: string) {
   return apiRequest<OfficerAllocationResult[]>(`/officer/allocations/${roundId}`);
+}
+
+export async function sendReportToAdmin(payload: {
+  roundId: string;
+  roundName: string;
+  allocationCount: number;
+  reportData: any;
+}) {
+  return apiRequest<{ message: string }>(`/officer/reports/send`, {
+    method: "POST",
+    body: payload,
+  });
 }

@@ -7,3 +7,4 @@ export * from './complaint.js';
 export * from './housing.js';
 export * from './scoring.js';
 export * from './backup.js';
+export * from './report.js';

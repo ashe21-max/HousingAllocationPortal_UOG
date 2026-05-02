@@ -10,7 +10,7 @@ import { ApiError } from "@/lib/api/client";
 import {
   getOfficerAllocationResults,
   getOfficerAvailableHouses,
-  getOfficerRounds,
+  getOfficerManagedRounds,
   runOfficerAllocation,
 } from "@/lib/api/officer";
 
@@ -19,8 +19,8 @@ export function OfficerAllocationPanel() {
   const [selectedRoundId, setSelectedRoundId] = useState("");
 
   const roundsQuery = useQuery({
-    queryKey: ["officer-rounds"],
-    queryFn: getOfficerRounds,
+    queryKey: ["officer-managed-rounds"],
+    queryFn: getOfficerManagedRounds,
   });
 
   const availableHousesQuery = useQuery({
@@ -35,7 +35,13 @@ export function OfficerAllocationPanel() {
   });
 
   const runAllocationMutation = useMutation({
-    mutationFn: (roundId: string) => runOfficerAllocation(roundId),
+    mutationFn: (roundId: string) => {
+      const round = roundsQuery.data?.find((r) => r.id === roundId);
+      if (round?.status !== "OPEN") {
+        throw new Error("Only OPEN rounds can run allocation.");
+      }
+      return runOfficerAllocation(roundId);
+    },
     onSuccess: (data) => {
       toast.success(
         `Allocation completed: ${data.summary.allocatedCount} assigned / ${data.summary.rankedApplicants} ranked.`,
@@ -48,7 +54,7 @@ export function OfficerAllocationPanel() {
     },
     onError: (error) => {
       const message =
-        error instanceof ApiError ? error.message : "Allocation run failed.";
+        error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Allocation run failed.";
       toast.error(message);
     },
   });
@@ -58,13 +64,16 @@ export function OfficerAllocationPanel() {
       { label: "Select round for allocation", value: "" },
       ...(
         roundsQuery.data?.map((round) => ({
-          label: `${round.name} (${round.committeeRankingStatus})`,
+          label: `${round.name} (${round.status} - ${round.committeeRankingStatus})`,
           value: round.id,
         })) ?? []
       ),
     ],
     [roundsQuery.data],
   );
+
+  const selectedRound = roundsQuery.data?.find((r) => r.id === selectedRoundId);
+  const canRunAllocation = selectedRound?.status === "OPEN";
 
   useEffect(() => {
     if (!selectedRoundId && roundOptions.length > 1) {
@@ -94,11 +103,17 @@ export function OfficerAllocationPanel() {
           <Button
             onClick={() => runAllocationMutation.mutate(selectedRoundId)}
             busy={runAllocationMutation.isPending}
-            disabled={!selectedRoundId}
+            disabled={!selectedRoundId || !canRunAllocation}
           >
             Run Allocation
           </Button>
         </div>
+
+        {selectedRound && !canRunAllocation && (
+          <p className="text-sm text-[var(--color-danger)]">
+            Round must be in OPEN status to run allocation.
+          </p>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="border border-[var(--border)] p-4">

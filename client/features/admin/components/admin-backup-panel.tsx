@@ -64,8 +64,6 @@ export function AdminBackupPanel() {
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [selectedTables, setSelectedTables] = useState<string[]>([]);
   const [backupType, setBackupType] = useState<"full" | "incremental" | "partial">("full");
-  const [isAutoBackupEnabled, setIsAutoBackupEnabled] = useState(false);
-  const [autoBackupInterval, setAutoBackupInterval] = useState("daily");
   const [selectedBackupLogs, setSelectedBackupLogs] = useState<BackupLog[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
@@ -323,7 +321,7 @@ export function AdminBackupPanel() {
 
       {/* Main Content */}
       <Tabs defaultValue="backups" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="backups" className="flex items-center gap-2">
             <History className="w-4 h-4" />
             Backup History
@@ -331,10 +329,6 @@ export function AdminBackupPanel() {
           <TabsTrigger value="create" className="flex items-center gap-2">
             <Database className="w-4 h-4" />
             Create Backup
-          </TabsTrigger>
-          <TabsTrigger value="schedule" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Schedule
           </TabsTrigger>
           <TabsTrigger value="logs" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
@@ -390,25 +384,15 @@ export function AdminBackupPanel() {
                         
                         <div className="flex items-center gap-2">
                           {backup.status === "completed" && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDownloadBackup(backup)}
-                                className="flex items-center gap-1"
-                              >
-                                <Download className="w-3 h-3" />
-                                Download
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex items-center gap-1"
-                              >
-                                <Eye className="w-3 h-3" />
-                                View
-                              </Button>
-                            </>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownloadBackup(backup)}
+                              className="flex items-center gap-1"
+                            >
+                              <Download className="w-3 h-3" />
+                              Download
+                            </Button>
                           )}
                           <Button
                             size="sm"
@@ -514,82 +498,6 @@ export function AdminBackupPanel() {
                 </Button>
                 <Button variant="outline">Cancel</Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="schedule" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Backup Schedule
-              </CardTitle>
-              <CardDescription>
-                Configure automatic backup schedules
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Automatic Backups</h3>
-                  <p className="text-sm text-gray-600">Enable scheduled backups for data protection</p>
-                </div>
-                <Button
-                  variant={isAutoBackupEnabled ? "primary" : "outline"}
-                  onClick={() => setIsAutoBackupEnabled(!isAutoBackupEnabled)}
-                >
-                  {isAutoBackupEnabled ? "Enabled" : "Disabled"}
-                </Button>
-              </div>
-
-              {isAutoBackupEnabled && (
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">Backup Frequency</label>
-                  <select
-                    value={autoBackupInterval}
-                    onChange={(e) => setAutoBackupInterval(e.target.value)}
-                    className="w-full border rounded-lg p-2"
-                  >
-                    <option value="hourly">Every Hour</option>
-                    <option value="daily">Daily (2:00 AM)</option>
-                    <option value="weekly">Weekly (Sunday 2:00 AM)</option>
-                    <option value="monthly">Monthly (1st of month)</option>
-                  </select>
-                </div>
-              )}
-
-              <div className="border-t pt-4">
-                <h3 className="font-medium mb-3">Retention Policy</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Keep daily backups for</span>
-                    <select className="border rounded p-1 text-sm">
-                      <option>7 days</option>
-                      <option>14 days</option>
-                      <option>30 days</option>
-                    </select>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Keep weekly backups for</span>
-                    <select className="border rounded p-1 text-sm">
-                      <option>4 weeks</option>
-                      <option>8 weeks</option>
-                      <option>12 weeks</option>
-                    </select>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Keep monthly backups for</span>
-                    <select className="border rounded p-1 text-sm">
-                      <option>6 months</option>
-                      <option>12 months</option>
-                      <option>24 months</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <Button className="w-full">Save Schedule Settings</Button>
             </CardContent>
           </Card>
         </TabsContent>

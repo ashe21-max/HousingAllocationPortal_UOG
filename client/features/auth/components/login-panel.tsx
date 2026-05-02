@@ -6,17 +6,12 @@ import Link from "next/link";
 import {
   KeyRound,
   MailCheck,
-  Sparkles,
+  
   Zap,
   Shield,
-  User,
-  Lock,
-  Eye,
-  EyeOff,
+ 
   ChevronRight,
-  LogIn,
-  UserPlus,
-  AlertCircle,
+ 
   CheckCircle2,
   Loader2
 } from "lucide-react";
@@ -213,8 +208,19 @@ export function LoginPanel() {
 
               {/* Forgot Password Link */}
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[var(--foreground-tertiary)]">New user?</span>
-                <Link 
+<div className="text-center pt-4 border-t border-[var(--border)]">
+              
+              <div className="flex flex-col items-center gap-2 text-sm">
+                <p> Register if have not account </p>
+                <Link
+                  href="/auth/signup"
+                  className="text-[var(--color-blue)] hover:text-[var(--color-blue-dark)] transition-colors duration-[var(--transition-fast)]"
+                >
+                signup </Link>
+              </div>
+            </div>    
+             
+            <Link 
                   href="/auth/forgot-password" 
                   className="text-[var(--color-blue)] hover:text-[var(--color-blue-dark)] transition-colors duration-[var(--transition-fast)] flex items-center gap-1"
                 >
@@ -232,12 +238,7 @@ export function LoginPanel() {
               </div>
             </div>
 
-            {/* Help Section */}
-            <div className="text-center pt-4 border-t border-[var(--border)]">
-              <p className="text-xs text-[var(--foreground-tertiary)] mb-2">
-                Need help accessing your account?
-              </p>
-            </div>
+            
           </CardContent>
         </Card>
 

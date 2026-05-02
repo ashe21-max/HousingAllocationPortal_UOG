@@ -37,24 +37,10 @@ export async function createBackupController(
       throw new AppError('Tables are required for partial backup', 400, 'VALIDATION_ERROR');
     }
 
-    // Use the exact same logic as the working test endpoint
-    const { randomUUID } = await import('crypto');
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `housing_portal_${type}_backup_${timestamp}.sql`;
-    
-    const newBackup = {
-      id: randomUUID(),
-      filename,
-      type,
-      size: 1024 * 1024, // 1MB mock size
-      status: 'completed',
-      description: description || `Manual ${type} backup`,
-      tables: tables || null,
-      createdBy: '00000000-0000-0000-0000-000000000000',
-      completedAt: new Date(),
-    };
+    // Use the real service to create actual database backup
+    const userId = req.user?.userId || '00000000-0000-0000-0000-000000000000';
+    const backup = await createBackupService(userId, { type, description, tables });
 
-    const [backup] = await db.insert(systemBackups).values(newBackup).returning();
     res.status(201).json(backup);
   } catch (error) {
     next(error);
@@ -109,69 +95,17 @@ export async function downloadBackupController(
     // Get backup file path
     const filePath = await downloadBackupService(req.params.id);
     const backup = await getBackupByIdService(req.params.id);
-    
+
     // Set appropriate headers for file download
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${backup.filename}"`);
-    
+
     // Stream the actual backup file to the client
     const fs = require('fs');
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
   } catch (error) {
     next(error);
-  }
-}
-
-function generateMockBackupContent(type: string, tables: string[]): string {
-  const timestamp = new Date().toISOString();
-  
-  if (type === 'full') {
-    return `-- Housing Portal Full Backup
--- Generated on: ${timestamp}
--- Type: Full Database Backup
-
--- Database Schema Dump
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(320) NOT NULL,
-    role VARCHAR(50) NOT NULL,
-    department VARCHAR(255),
-    is_verified BOOLEAN DEFAULT FALSE,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Sample Data
-INSERT INTO users (id, name, email, role, department) VALUES 
-('00000000-0000-0000-0000-000000000000', 'Test User', 'test@example.com', 'ADMIN', 'IT');
-
--- Backup completed successfully
--- Total tables: ${tables.length || 'all'}
--- Backup size: 1MB (mock)
-`;
-  } else if (type === 'incremental') {
-    return `-- Housing Portal Incremental Backup
--- Generated on: ${timestamp}
--- Type: Incremental Backup
-
--- Changes since last backup:
--- No changes detected (mock data)
-
--- Backup completed successfully
-`;
-  } else {
-    return `-- Housing Portal Partial Backup
--- Generated on: ${timestamp}
--- Type: Partial Backup
--- Tables: ${tables.join(', ')}
-
--- Partial backup for selected tables
-${tables.map(table => `-- Table: ${table}\n-- Data for ${table}\n`).join('\n')}
-
--- Backup completed successfully
-`;
   }
 }
 

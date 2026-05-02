@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CheckCircle, Clock, FileText, Home, Send, Calendar, Award, AlertCircle, Eye, User, GraduationCap } from "lucide-react";
+import { CheckCircle, Clock, FileText, Send, Calendar, AlertCircle, Eye, User, GraduationCap, Edit } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
@@ -335,6 +335,9 @@ export function MyApplicationsPanel() {
     },
   });
 
+  const firstApplication = applications?.[0];
+  const isRoundOpen = firstApplication?.roundStatus === "OPEN";
+
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 shadow-sm">
       {/* Unified Header */}
@@ -354,13 +357,18 @@ export function MyApplicationsPanel() {
               <p className="text-sm text-gray-500">Total Applications</p>
               <p className="text-2xl font-bold text-blue-600">{applications?.length || 0}</p>
             </div>
-            <Button 
-              onClick={() => refetch()} 
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              Refresh
-            </Button>
+            {firstApplication && (
+              <Button 
+                onClick={() => window.location.href = '/dashboard/lecturer/application'}
+                variant="outline"
+                className="flex items-center gap-2"
+                disabled={!isRoundOpen}
+                title={!isRoundOpen ? "Application can only be edited when the round is open" : "Edit your application"}
+              >
+                <Edit className="w-4 h-4" />
+                Edit
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -419,26 +427,6 @@ export function MyApplicationsPanel() {
 
               {/* Application Content - Full width */}
               <div className="pb-6 space-y-4">
-                {/* Housing Information */}
-                <div className="flex items-start gap-3">
-                  <Home className="w-5 h-5 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Housing Preference</p>
-                    <p className="text-sm text-gray-600">{housingLabel(application)}</p>
-                  </div>
-                </div>
-
-                {/* Score Information */}
-                {application.attachedScoreFinal && (
-                  <div className="flex items-start gap-3">
-                    <Award className="w-5 h-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Application Score</p>
-                      <p className="text-lg font-bold text-blue-600">{application.attachedScoreFinal} points</p>
-                    </div>
-                  </div>
-                )}
-
                 {/* Date Information */}
                 <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />

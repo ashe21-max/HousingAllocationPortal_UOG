@@ -8,6 +8,7 @@ import {
   passwordLoginController,
   resendOtpController,
   setPasswordController,
+  signupController,
   updateProfileController,
   updateProfilePictureController,
   verifyOtpController,
@@ -16,6 +17,7 @@ import { authenticate } from '../middleware/authenticate.js';
 
 const authRouter = Router();
 
+authRouter.post('/signup', signupController);
 authRouter.post('/forgot-password', forgotPasswordController);
 authRouter.post('/login/initiate', initiateLoginController);
 authRouter.post('/otp/resend', resendOtpController);

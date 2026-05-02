@@ -13,6 +13,7 @@ import {
   findMyApplications,
   submitApplication,
   updateApplicationDraft,
+  deleteApplicationByIdAndUser,
 } from '../repository/application.repository.js';
 import { canTransitionApplicationStatus } from '../utils/application-status.js';
 import {
@@ -107,6 +108,35 @@ export async function saveMyApplicationDraft(
   return updated;
 }
 
+export async function deleteMyApplication(userId: string, applicationIdInput: string) {
+  const applicationId = validateApplicationId(applicationIdInput);
+  
+  console.log('deleteMyApplication called:', { applicationId, userId });
+  
+  const application = await findApplicationByIdAndUser(applicationId, userId);
+  if (!application) {
+    throw new AppError('Application not found', 404, 'APPLICATION_NOT_FOUND');
+  }
+
+  console.log('Application found:', application.id, 'Round ID:', application.roundId);
+
+  const round = await findApplicationRoundById(application.roundId);
+  console.log('Round status:', round?.status);
+  
+  if (round && round.status !== 'OPEN') {
+    throw new AppError('Cannot delete application when the round is not open', 400, 'ROUND_NOT_OPEN');
+  }
+
+  const deleted = await deleteApplicationByIdAndUser(applicationId, userId);
+  console.log('Delete result:', deleted);
+  
+  if (!deleted) {
+    throw new AppError('Failed to delete application', 500, 'APPLICATION_DELETE_FAILED');
+  }
+
+  return deleted;
+}
+
 export async function submitMyApplication(userId: string, applicationIdInput: string) {
   const applicationId = validateApplicationId(applicationIdInput);
   const application = await findApplicationByIdAndUser(applicationId, userId);
@@ -171,9 +201,6 @@ export async function getApplicationFormOptions() {
     findActiveRoundsForLecturer(),
     findHousingUnits({ status: 'Available' }),
   ]);
-
-  console.log('getApplicationFormOptions - rounds:', rounds);
-  console.log('getApplicationFormOptions - availableHouses:', availableHouses);
 
   // If no rounds found, create default round
   if (!rounds || rounds.length === 0) {

@@ -74,14 +74,15 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
           { name: "Support", href: "/dashboard/lecturer/support", icon: HelpCircle },
         ] 
       : []),
-    ...(session?.role === "OFFICER" 
+    ...(session?.role === "OFFICER"
       ? [
           { name: "Manage Rounds", href: "/dashboard/officer/rounds", icon: CalendarRange },
           { name: "Run Allocation", href: "/dashboard/officer/allocation", icon: ClipboardCheck },
+          { name: "Generate Report", href: "/dashboard/officer/reports", icon: Download },
           { name: "Manage Housing", href: "/dashboard/officer/housing", icon: Building2 },
            { name: "Settings", href: "/dashboard/officer/settings", icon: Settings },
           { name: "Support", href: "/dashboard/officer/support", icon: HelpCircle },
-        ] 
+        ]
       : []),
     ...(session?.role === "COMMITTEE"
       ? [
@@ -95,8 +96,8 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
 
   return (
     <aside className={`
-      fixed lg:static top-0 left-0 z-50 h-full w-72 flex-col border-r border-[#2a5298] 
-      bg-gradient-to-br from-[#f5f7fa] to-[#e9edf2] transform transition-transform duration-300 ease-in-out
+      fixed lg:static top-0 left-0 z-50 h-full w-72 flex-col border-r border-[var(--border)] 
+      bg-gradient-to-br from-[var(--background-secondary)] to-[var(--background)] transform transition-transform duration-300 ease-in-out
       ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
       lg:translate-x-0 lg:flex
     `}>
@@ -115,24 +116,24 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
       {/* Content */}
       <div className="flex flex-col h-full pt-12 lg:pt-0">
         {/* Header */}
-        <div className="h-16 flex items-center px-6 border-b border-[#2a5298] bg-gradient-to-r from-[#1e3c72] via-[#2b4c7c] to-[#2a5298] text-white shadow-lg">
-          <BrandLockup logoSize={40} subtitle="" />
+        <div className="h-20 flex items-center px-8 border-b border-[var(--border)] bg-gradient-to-r from-[var(--color-blue)] via-[var(--color-green)] to-[var(--color-yellow)] text-white shadow-lg">
+          <BrandLockup logoSize={48} subtitle="" title="UOG" />
         </div>
 
       {/* Search Bar */}
-        <div className="px-4 py-3 border-b border-[#2a5298] bg-gradient-to-r from-transparent to-[#2a5298]/10">
+        <div className="px-4 py-3 border-b border-[var(--border)] bg-white/50 backdrop-blur-sm">
           <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-[#1e3c72]/10 via-[#2b4c7c]/10 to-[#2a5298]/10 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-500 blur-sm" />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b] transition-all duration-300 group-hover:text-[#1e3c72] group-hover:scale-110 z-10" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-blue)]/10 via-[var(--color-green)]/10 to-[var(--color-yellow)]/10 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-500 blur-sm" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--foreground-secondary)] transition-all duration-300 group-hover:text-[var(--color-blue)] group-hover:scale-110 z-10" />
             <input
               type="text"
               placeholder="Search navigation..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm bg-[#ffffff] border border-[#cbd5e1] rounded-xl 
-                       focus:outline-none focus:border-[#2a5298] focus:bg-[#ffffff] 
-                       focus:ring-2 focus:ring-[#2a5298]/30 transition-all duration-300 shadow-sm hover:shadow-md
-                       placeholder:text-[#64748b] relative z-10"
+              className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-[var(--border)] rounded-xl 
+                       focus:outline-none focus:border-[var(--color-blue)] focus:bg-white 
+                       focus:ring-2 focus:ring-[var(--color-blue)]/30 transition-all duration-300 shadow-sm hover:shadow-md
+                       placeholder:text-[var(--foreground-secondary)] relative z-10"
             />
           </div>
         </div>
@@ -149,11 +150,11 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
                 if (filteredNavigation.length === 0) {
                   return (
                     <div className="text-center py-8 px-4">
-                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Search className="w-6 h-6 text-gray-400" />
+                      <div className="w-12 h-12 bg-[var(--background)] rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Search className="w-6 h-6 text-[var(--foreground-secondary)]" />
                       </div>
-                      <p className="text-sm text-gray-500">No navigation items found</p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-sm text-[var(--foreground-secondary)]">No navigation items found</p>
+                      <p className="text-xs text-[var(--foreground-tertiary)] mt-1">
                         {searchQuery.trim() 
                           ? `No items match "${searchQuery}"` 
                           : "Try searching for navigation items"}
@@ -167,59 +168,31 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
                 return (
                   <Link key={item.name} href={item.href}>
                     <div className={`
-                      relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
-                      transition-all duration-500 transform hover:scale-105 hover:-translate-y-1
+                      flex items-center gap-3 px-4 py-3 rounded-3xl text-sm font-medium
+                      transition duration-300 hover:-translate-y-0.5 hover:shadow-md
                       ${isActive 
-                        ? 'bg-gradient-to-r from-[#1e3c72] via-[#2b4c7c] to-[#2a5298] text-white shadow-xl shadow-[#2a5298]/40 border border-[#2a5298]' 
-                        : 'bg-[#ffffff] hover:bg-gradient-to-r hover:from-[#f5f7fa] hover:via-[#e9edf2] hover:to-[#e9edf2] text-[#475569] hover:shadow-xl hover:border-[#2a5298] border border-[#cbd5e1]'
+                        ? 'bg-gradient-to-r from-[var(--color-blue)] via-[var(--color-green)] to-[var(--color-yellow)] text-white shadow-lg shadow-[rgba(var(--color-blue-rgb),0.25)]' 
+                        : 'bg-white text-[var(--foreground)] hover:bg-gradient-to-r hover:from-[var(--color-blue)]/10 hover:via-[var(--color-green)]/10 hover:to-[var(--color-yellow)]/10 border border-[var(--border)] hover:border-[var(--color-blue)]'
                       }
                     `}
-                    style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    {/* Multi-layer animated background gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#2a5298]/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-600 rounded-xl blur-md" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#1e3c72]/20 via-transparent to-[#2b4c7c]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-xl blur-lg" />
-                    <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#2a5298]/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-800 rounded-xl blur-xl" />
-                    
-                    {/* Premium shimmer effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ffffff]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-xl -translate-x-full group-hover:translate-x-full ease-out" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#1e3c72]/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1200 rounded-xl -translate-x-full group-hover:translate-x-full ease-in-out" />
-                    
-                    {/* Animated glow and pulse effects */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#2a5298]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl blur-xl group-hover:blur-2xl" />
-                    <div className="absolute inset-0 rounded-xl border border-[#2a5298]/20 opacity-0 group-hover:opacity-100 transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-[#2a5298]/50" />
-                    
                     <item.icon className={`
-                      h-5 w-5 shrink-0 transition-all duration-500 relative z-10
+                      h-5 w-5 shrink-0 transition duration-300
                       ${isActive 
-                        ? 'text-white drop-shadow-xl scale-125 filter brightness-110' 
-                        : 'text-[#64748b] group-hover:text-[#1e3c72] group-hover:scale-125 group-hover:drop-shadow-lg'
+                        ? 'text-white' 
+                        : 'text-[var(--foreground-secondary)] hover:text-[var(--color-blue)]'
                       }
                     `} />
                     
-                    {/* Icon glow effect for active state */}
-                    {isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#2a5298]/50 to-transparent rounded-xl blur-2xl animate-pulse" />
-                    )}
-                    
                     <span className={`
-                      transition-all duration-500 relative z-10
+                      transition duration-300
                       ${isActive 
-                        ? 'text-white font-bold tracking-wide' 
-                        : 'text-[#475569] font-medium group-hover:text-[#1e3c72] group-hover:font-semibold group-hover:tracking-wide'
+                        ? 'text-white font-semibold' 
+                        : 'text-[var(--foreground)] font-medium hover:text-[var(--color-blue)]'
                       }
                     `}>
                       {item.name}
                     </span>
-                    
-                    {/* Premium active indicator */}
-                    {isActive && (
-                      <div className="absolute right-3 top-1/2 flex items-center gap-2">
-                        <div className="w-2 h-2 bg-gradient-to-r from-[#2a5298] to-[#1e3c72] rounded-full animate-pulse shadow-lg shadow-[#2a5298]/50" />
-                        <div className="w-1 h-1 bg-[#ffffff] rounded-full animate-ping" style={{ animationDelay: '0.3s' }} />
-                        <div className="w-1 h-1 bg-[#ffffff]/80 rounded-full animate-ping" style={{ animationDelay: '0.6s' }} />
-                      </div>
-                    )}
                   </div>
                 </Link>
               );
@@ -229,13 +202,13 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
         </div>
 
         {/* Logout Section */}
-        <div className={`p-4 border-t border-[#2a5298] backdrop-blur-sm bg-gradient-to-r from-transparent to-[#2a5298]/10 transition-all duration-500`}>
+        <div className={`p-4 border-t border-[var(--border)] backdrop-blur-sm bg-white/50 transition-all duration-300`}>
           <Button 
             variant="ghost" 
-            className={`w-full justify-start gap-3 h-12 px-4 rounded-xl
-                     text-[#64748b] hover:bg-gradient-to-r hover:from-red-600/20 hover:to-pink-600/20 hover:text-white 
-                     border-transparent hover:border-[#2a5298]/50 transition-all duration-500 transform hover:scale-[1.02]
-                     relative overflow-hidden group`}
+            className={`w-full justify-start gap-3 h-12 px-4 rounded-3xl
+                     text-[var(--foreground)] hover:bg-gradient-to-r hover:from-[var(--color-blue)] hover:via-[var(--color-green)] hover:to-[var(--color-yellow)] hover:text-white 
+                     border border-[var(--border)] hover:border-transparent transition-all duration-300
+                     hover:-translate-y-0.5 hover:shadow-lg shadow-sm`}
             onClick={async () => {
               try {
                 await logout();
@@ -247,27 +220,8 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
               }
             }}
           >
-            {/* Multi-layer animated hover background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-red-600/30 via-transparent to-pink-600/30 opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-xl" />
-            <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 via-transparent to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-800 rounded-xl" />
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-red-600/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-900 rounded-xl" />
-            
-            {/* Premium shimmer effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ffffff]/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1200 rounded-xl -translate-x-full group-hover:translate-x-full ease-out" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-400/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1500 rounded-xl -translate-x-full group-hover:translate-x-full ease-in-out" />
-            
-            {/* Animated glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl blur-xl group-hover:blur-2xl" />
-            <div className="absolute inset-0 rounded-xl border border-red-600/20 opacity-0 group-hover:opacity-100 transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-red-600/50" />
-            
-            <LogOut className="h-5 w-5 shrink-0 transition-all duration-500 text-[#64748b] group-hover:text-red-400 group-hover:scale-110 relative z-10" />
-            <span className="truncate font-medium transition-all duration-500 text-[#64748b] group-hover:text-white group-hover:translate-x-1 relative z-10">Logout</span>
-            
-            {/* Premium warning indicator */}
-            <div className="ml-auto">
-              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-red-500 to-pink-500 animate-pulse shadow-lg shadow-red-500/50" />
-              <div className="w-1 h-1 bg-red-400 rounded-full animate-ping absolute top-1/2 left-1/2" style={{ animationDelay: '0.5s' }} />
-            </div>
+            <LogOut className="h-5 w-5 shrink-0 transition-all duration-300" />
+            <span className="truncate font-medium">Logout</span>
           </Button>
         </div>
       </div>

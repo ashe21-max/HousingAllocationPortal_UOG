@@ -31,25 +31,28 @@ export async function apiRequest<T>(
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
 
-    // Check if response is HTML (error page) instead of JSON
     const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("text/html")) {
-      // Return null instead of throwing error to allow graceful fallback
-      return null as T;
+    const responseText = await response.text().catch(() => "");
+
+    let payload: { message?: string; code?: string } | T | string | null = null;
+    if (responseText) {
+      try {
+        payload = JSON.parse(responseText);
+      } catch {
+        payload = responseText;
+      }
     }
 
-    const payload = (await response.json().catch(() => null)) as
-      | { message?: string; code?: string }
-      | T
-      | null;
-
     if (!response.ok) {
-      const errorPayload = payload as { message?: string; code?: string } | null;
-      throw new ApiError(
-        errorPayload?.message ?? "Request failed",
-        response.status,
-        errorPayload?.code,
-      );
+      const errorPayload =
+        typeof payload === "object" && payload !== null
+          ? (payload as { message?: string; code?: string })
+          : null;
+      const errorMessage =
+        errorPayload?.message ??
+        (typeof payload === "string" ? payload : response.statusText ?? "Request failed");
+
+      throw new ApiError(errorMessage, response.status, errorPayload?.code);
     }
 
     return payload as T;

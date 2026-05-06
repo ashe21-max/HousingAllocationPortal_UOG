@@ -44,7 +44,7 @@ export async function createBackupService(userId: string, backupData: CreateBack
     // Get database connection details from environment
     const dbUrl = process.env.DATABASE_URL;
     if (!dbUrl) {
-      throw new Error('DATABASE_URL not configured');
+      throw new AppError('Backup database connection is not configured. Set DATABASE_URL.', 500, 'BACKUP_CONFIG_ERROR');
     }
 
     // Parse database URL to get connection details
@@ -84,7 +84,7 @@ export async function createBackupService(userId: string, backupData: CreateBack
     // Check if backup file was created
     const stats = await fs.stat(filePath);
     if (stats.size === 0) {
-      throw new Error('Backup file is empty');
+      throw new AppError('Backup file is empty after pg_dump execution', 500, 'BACKUP_FILE_EMPTY');
     }
 
     // Calculate checksum
@@ -113,10 +113,17 @@ export async function createBackupService(userId: string, backupData: CreateBack
 
     return updatedBackup;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown backup error';
+
     // Log error and update status
-    await logBackupService(backup.id, 'ERROR', 'Backup failed', { error: error.message });
+    await logBackupService(backup.id, 'ERROR', 'Backup failed', { error: errorMessage });
     await updateBackupStatusService(backup.id, 'failed');
-    throw error;
+
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(`Backup failed: ${errorMessage}`, 500, 'BACKUP_EXECUTION_ERROR');
   }
 }
 

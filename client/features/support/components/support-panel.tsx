@@ -417,6 +417,7 @@ export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
                   {/* Message Input */}
                   <div className="flex gap-2">
                     <Input
+                      label="Support message"
                       placeholder="Ask about housing applications, eligibility, or system help..."
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
@@ -455,6 +456,7 @@ export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--foreground-tertiary)] w-4 h-4" />
                     <Input
+                      label="Search FAQs"
                       placeholder="Search FAQs..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -621,13 +623,15 @@ export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
                                   {report.status}
                                 </Badge>
                                 <span className="text-sm text-[var(--foreground-tertiary)]">
-                                  {new Date(report.createdAt).toLocaleDateString()}
+                                  {new Date(report.sentAt).toLocaleDateString()}
                                 </span>
                               </div>
-                              <p className="font-medium mb-1">{report.title}</p>
-                              <p className="text-[var(--foreground-secondary)] text-sm mb-2">{report.description}</p>
+                              <p className="font-medium mb-1">{report.roundName}</p>
+                              <p className="text-[var(--foreground-secondary)] text-sm mb-2">
+                                Round status: {report.roundStatus} • Committee: {report.committeeRankingStatus} • Allocations: {report.allocationCount}
+                              </p>
                               <p className="text-xs text-[var(--foreground-tertiary)]">
-                                Reported by: {report.reporterName} ({report.reporterEmail})
+                                Sent by user: {report.sentByUserId}
                               </p>
                             </div>
                             <div className="flex items-center gap-2 ml-4">

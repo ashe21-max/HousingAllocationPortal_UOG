@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CheckCircle, Clock, FileText, Send, Calendar, AlertCircle, Eye, User, GraduationCap, Edit } from "lucide-react";
+import { CheckCircle, Clock, FileText, Send, Calendar, AlertCircle, Eye, User, GraduationCap, Edit, Award } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
@@ -33,6 +33,7 @@ function formatDate(value: string | null) {
   return date.toLocaleString();
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function housingLabel(application: MyApplicationRow) {
   if (!application.preferredHousingBuildingName) {
     return "General request";

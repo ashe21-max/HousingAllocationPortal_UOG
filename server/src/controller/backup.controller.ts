@@ -3,6 +3,7 @@ import type { CreateBackupDto, CreateBackupScheduleDto, UpdateBackupScheduleDto 
 import { AppError } from '../errorHandler/app-error.js';
 import { db } from '../lib/db/index.js';
 import { systemBackups } from '../lib/db/schema/backup.js';
+import { users } from '../lib/db/schema/auth.js';
 import {
   createBackupService,
   getBackupsService,
@@ -38,7 +39,15 @@ export async function createBackupController(
     }
 
     // Use the real service to create actual database backup
-    const userId = req.user?.userId || '00000000-0000-0000-0000-000000000000';
+    let userId = req.user?.userId;
+    if (!userId) {
+      const dbUsers = await db.select({ id: users.id }).from(users).limit(1);
+      if (dbUsers.length > 0) {
+        userId = dbUsers[0].id;
+      } else {
+        userId = '00000000-0000-0000-0000-000000000000'; // Will likely fail FK constraint if users table is empty
+      }
+    }
     const backup = await createBackupService(userId, { type, description, tables });
 
     res.status(201).json(backup);
@@ -151,7 +160,17 @@ export async function createBackupScheduleController(
       throw new AppError('Tables are required for partial backup', 400, 'VALIDATION_ERROR');
     }
 
-    const schedule = await createBackupScheduleService('test-user-id', {
+    let userId = req.user?.userId;
+    if (!userId) {
+      const dbUsers = await db.select({ id: users.id }).from(users).limit(1);
+      if (dbUsers.length > 0) {
+        userId = dbUsers[0].id;
+      } else {
+        userId = '00000000-0000-0000-0000-000000000000';
+      }
+    }
+
+    const schedule = await createBackupScheduleService(userId, {
       name,
       type,
       frequency,

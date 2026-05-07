@@ -13,7 +13,7 @@ export function Badge({ children, className, variant = 'default', ...props }: Ba
     destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/80',
     outline: 'text-foreground border border-input bg-background hover:bg-accent hover:text-accent-foreground',
     success: 'bg-green-500 text-white hover:bg-green-600',
-    warning: 'bg-amber-500 text-black hover:bg-amber-600',
+    warning: 'bg-yellow-400 text-black hover:bg-yellow-500',
   };
 
   return (

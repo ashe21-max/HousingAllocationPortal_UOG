@@ -30,7 +30,7 @@ export default function HomePage() {
 
             <div className="relative h-29 w-44 overflow-hidden rounded-2xl">
 
-              <Image src="/ashuman.png" alt="University of Gondar logo" fill className="object-contain" sizes="100px" />
+              <Image src="/ashuman.png" alt="University of Gondar logo" loading="eager" fill className="object-contain" sizes="100px" />
 
             </div>
 

@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: housing-server
+    runtime: node
+    rootDir: server
+    buildCommand: npm run build
+    startCommand: npm run start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: BREVO_SENDER_NAME
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  - type: web
+    name: housing-client
+    runtime: node
+    rootDir: client
+    buildCommand: npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+databases:
+  - name: housing-db
+    databaseName: housing_allocation
+    user: housing_user
+    plan: starter

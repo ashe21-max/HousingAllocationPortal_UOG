@@ -10,12 +10,16 @@ export interface TabsProps extends React.HTMLAttributes<HTMLDivElement> {
 export interface TabsListProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   className?: string;
+  activeTab?: string;
+  setActiveTab?: (value: string) => void;
 }
 
 export interface TabsTriggerProps extends React.HTMLAttributes<HTMLButtonElement> {
   value: string;
   children: React.ReactNode;
   className?: string;
+  activeTab?: string;
+  setActiveTab?: (value: string) => void;
 }
 
 export interface TabsContentProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -31,7 +35,7 @@ export function Tabs({ children, defaultValue, className, ...props }: TabsProps)
     <div className={cn('w-full', className)} {...props}>
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child as React.ReactElement<any>, { activeTab, setActiveTab });
+          return React.cloneElement(child as React.ReactElement<{ activeTab: string; setActiveTab: (value: string) => void }>, { activeTab, setActiveTab });
         }
         return child;
       })}
@@ -39,27 +43,21 @@ export function Tabs({ children, defaultValue, className, ...props }: TabsProps)
   );
 }
 
-export function TabsList({ children, className, ...props }: TabsListProps) {
-  // Filter out non-DOM props
-  const { activeTab, setActiveTab, ...domProps } = props as any;
-  
+export function TabsList({ children, className, activeTab, setActiveTab, ...props }: TabsListProps) {
   return (
     <div
       className={cn(
         'inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
         className
       )}
-      {...domProps}
+      {...props}
     >
       {children}
     </div>
   );
 }
 
-export function TabsTrigger({ value, children, className, activeTab, setActiveTab, ...props }: TabsTriggerProps & { activeTab?: string; setActiveTab?: (value: string) => void }) {
-  // Filter out non-DOM props
-  const { activeTab: _, setActiveTab: __, ...domProps } = { activeTab, setActiveTab, ...props } as any;
-  
+export function TabsTrigger({ value, children, className, activeTab, setActiveTab, ...props }: TabsTriggerProps) {
   return (
     <button
       className={cn(
@@ -68,7 +66,7 @@ export function TabsTrigger({ value, children, className, activeTab, setActiveTa
         className
       )}
       onClick={() => setActiveTab?.(value)}
-      {...domProps}
+      {...props}
     >
       {children}
     </button>

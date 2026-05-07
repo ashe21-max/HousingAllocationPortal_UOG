@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,18 +17,11 @@ import {
   MapPin,
   Clock,
   Users,
-  ThumbsUp,
-  ThumbsDown,
   ChevronDown,
   ChevronUp,
   FileText,
   CheckCircle,
-  AlertCircle,
   Zap,
-  Facebook,
-  Youtube,
-  Globe,
-  Download,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -70,7 +62,8 @@ export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
       toast.success("Report status updated.");
       queryClient.invalidateQueries({ queryKey: ["allocation-reports"] });
     },
-    onError: (error) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onError: (_) => {
       toast.error("Failed to update report status.");
     },
   });
@@ -81,7 +74,8 @@ export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
       toast.success("Report deleted.");
       queryClient.invalidateQueries({ queryKey: ["allocation-reports"] });
     },
-    onError: (error) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onError: (_) => {
       toast.error("Failed to delete report.");
     },
   });
@@ -334,7 +328,7 @@ export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
             <Button
               key={tab.id}
               variant={activeTab === tab.id ? 'primary' : 'ghost'}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'chat' | 'faq' | 'contact' | 'reports')}
               className="flex items-center gap-2"
             >
               <tab.icon className="w-4 h-4" />
@@ -417,7 +411,7 @@ export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
                   {/* Message Input */}
                   <div className="flex gap-2">
                     <Input
-                      label="Support message"
+                      label="Ask a question"
                       placeholder="Ask about housing applications, eligibility, or system help..."
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
@@ -628,7 +622,7 @@ export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
                               </div>
                               <p className="font-medium mb-1">{report.roundName}</p>
                               <p className="text-[var(--foreground-secondary)] text-sm mb-2">
-                                Round status: {report.roundStatus} • Committee: {report.committeeRankingStatus} • Allocations: {report.allocationCount}
+                                Round status: {report.roundStatus} · Committee: {report.committeeRankingStatus}
                               </p>
                               <p className="text-xs text-[var(--foreground-tertiary)]">
                                 Sent by user: {report.sentByUserId}

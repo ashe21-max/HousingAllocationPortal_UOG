@@ -45,8 +45,8 @@ export async function apiRequest<T>(
 
     if (!response.ok) {
       const errorPayload =
-        typeof payload === "object" && payload !== null
-          ? (payload as { message?: string; code?: string })
+        typeof payload === "object" && payload !== null && "message" in payload
+          ? payload as { message?: string; code?: string }
           : null;
       const errorMessage =
         errorPayload?.message ??

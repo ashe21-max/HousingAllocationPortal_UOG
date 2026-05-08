@@ -56,7 +56,7 @@ export function OfficerReportsPanel() {
   });
 
   const roundOptions = [
-    { label: "Select round to view report", value: "" },
+    { label: "-- Select round --", value: "" },
     ...(roundsQuery.data?.map((round) => ({
       label: `${round.name} (${round.status})`,
       value: round.id,
@@ -119,7 +119,7 @@ export function OfficerReportsPanel() {
 
   return (
     <div className="space-y-6">
-      <section className="panel p-6">
+      <section className="bg-white border border-gray-200 shadow-sm rounded-3xl p-6 backdrop-blur-none">
         <div className="grid gap-4 md:grid-cols-[1fr_auto_auto_auto] md:items-end">
           <Select
             label="Select Round"
@@ -130,16 +130,17 @@ export function OfficerReportsPanel() {
           <Button
             onClick={handleDownloadReport}
             disabled={!selectedRoundId || !allocationResultsQuery.data || allocationResultsQuery.data.length === 0}
-            className="gap-2"
+            className="gap-2 disabled:opacity-80 disabled:cursor-not-allowed"
           >
             <Download className="h-4 w-4" />
             Download
           </Button>
           <Button
+            variant="success"
             onClick={handleSendToAdmin}
             busy={sendToAdminMutation.isPending}
             disabled={!selectedRoundId || !allocationResultsQuery.data || allocationResultsQuery.data.length === 0}
-            className="gap-2"
+            className="gap-2 disabled:opacity-80 disabled:cursor-not-allowed"
           >
             <FileText className="h-4 w-4" />
             Send to Admin
@@ -149,7 +150,7 @@ export function OfficerReportsPanel() {
             onClick={() => deleteRoundMutation.mutate(selectedRoundId)}
             busy={deleteRoundMutation.isPending}
             disabled={!selectedRoundId}
-            className="gap-2"
+            className="gap-2 disabled:opacity-80 disabled:cursor-not-allowed"
           >
             <Trash2 className="h-4 w-4" />
             Delete
@@ -158,8 +159,8 @@ export function OfficerReportsPanel() {
       </section>
 
       {selectedRound && (
-        <section className="panel overflow-hidden">
-          <div className="p-6 border-b border-[var(--border)]">
+        <section className="bg-white border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
             <h3 className="text-lg font-bold uppercase tracking-tight text-[var(--color-primary)]">
               Round Information
             </h3>
@@ -186,20 +187,20 @@ export function OfficerReportsPanel() {
       )}
 
       {allocationResultsQuery.isLoading ? (
-        <div className="panel p-8">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-3xl p-8">
           <p className="text-sm text-muted">Loading allocation results...</p>
         </div>
       ) : allocationResultsQuery.isError ? (
-        <div className="panel p-8">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-3xl p-8">
           <p className="text-sm text-[var(--color-danger)]">Could not load allocation results.</p>
         </div>
       ) : !allocationResultsQuery.data || allocationResultsQuery.data.length === 0 ? (
-        <div className="panel p-8">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-3xl p-8">
           <p className="text-sm text-muted">No allocation results for this round yet.</p>
         </div>
       ) : (
-        <section className="panel overflow-hidden">
-          <div className="p-6 border-b border-[var(--border)]">
+        <section className="bg-white border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
             <h3 className="text-lg font-bold uppercase tracking-tight text-[var(--color-primary)]">
               Allocation Results
             </h3>

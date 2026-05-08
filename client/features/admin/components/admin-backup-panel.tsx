@@ -11,7 +11,6 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  FileText,
   Calendar,
   HardDrive,
   AlertTriangle,
@@ -21,8 +20,7 @@ import {
   Settings,
   BarChart3,
   Activity,
-  Zap,
-  User
+  Zap
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,14 +32,12 @@ import {
   getBackups,
   deleteBackup,
   downloadBackup,
-  getBackupLogs,
   createBackupSchedule,
   getBackupSchedules,
   updateBackupSchedule,
   deleteBackupSchedule,
   type BackupRecord,
   type BackupSchedule,
-  type BackupLog,
   type CreateBackupRequest,
   type CreateBackupScheduleRequest,
   type UpdateBackupScheduleRequest,
@@ -52,8 +48,6 @@ interface SystemStats {
   successfulBackups: number;
   failedBackups: number;
   totalSize: string;
-  lastBackup: string;
-  averageBackupTime: string;
   storageUsed: number;
   storageCapacity: number;
 }
@@ -62,10 +56,7 @@ export function AdminBackupPanel() {
   const [backups, setBackups] = useState<BackupRecord[]>([]);
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
-  const [selectedTables, setSelectedTables] = useState<string[]>([]);
-  const [backupType, setBackupType] = useState<"full" | "incremental" | "partial">("full");
-  const [selectedBackupLogs, setSelectedBackupLogs] = useState<BackupLog[]>([]);
-  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [backupType, setBackupType] = useState<"full" | "incremental">("full");
 
   // Load backups from API
   useEffect(() => {
@@ -84,8 +75,6 @@ export function AdminBackupPanel() {
           successfulBackups: 0,
           failedBackups: 0,
           totalSize: "0 B",
-          lastBackup: "",
-          averageBackupTime: "0m 0s",
           storageUsed: 0,
           storageCapacity: 100
         });
@@ -105,8 +94,6 @@ export function AdminBackupPanel() {
         successfulBackups,
         failedBackups,
         totalSize: formatBytes(totalSize),
-        lastBackup: response.items[0]?.createdAt || "",
-        averageBackupTime: "3m 24s",
         storageUsed: 68,
         storageCapacity: 100
       });
@@ -133,7 +120,6 @@ export function AdminBackupPanel() {
       const backupData: CreateBackupRequest = {
         type: backupType,
         description: `Manual ${backupType} backup`,
-        tables: backupType === "partial" && selectedTables.length > 0 ? selectedTables : undefined,
       };
 
       const newBackup = await createBackup(backupData);
@@ -172,20 +158,6 @@ export function AdminBackupPanel() {
     } catch (error) {
       console.error("Failed to delete backup:", error);
       toast.error("Failed to delete backup");
-    }
-  };
-
-  const handleViewLogs = async (backupId: string) => {
-    setIsLoadingLogs(true);
-    try {
-      const logs = await getBackupLogs(backupId);
-      setSelectedBackupLogs(logs || []);
-    } catch (error) {
-      console.error("Failed to load backup logs:", error);
-      toast.error("Failed to load backup logs");
-      setSelectedBackupLogs([]);
-    } finally {
-      setIsLoadingLogs(false);
     }
   };
 
@@ -253,7 +225,7 @@ export function AdminBackupPanel() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card className="border-blue-200 bg-blue-50">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-blue-800 flex items-center gap-2">
@@ -284,44 +256,12 @@ export function AdminBackupPanel() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-200 bg-purple-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-purple-800 flex items-center gap-2">
-                <HardDrive className="w-4 h-4" />
-                Storage Used
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-900">{stats.totalSize}</div>
-              {/* <Progress value={stats.storageUsed} className="mt-2 h-2" /> */}
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-purple-600 h-2 rounded-full" 
-                  style={{ width: `${stats.storageUsed}%` }}
-                />
-              </div>
-              <p className="text-xs text-purple-600 mt-1">{stats.storageUsed}% of capacity</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-orange-200 bg-orange-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-orange-800 flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Last Backup
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-900">{stats.averageBackupTime}</div>
-              <p className="text-xs text-orange-600 mt-1">Average time</p>
-            </CardContent>
-          </Card>
         </div>
       )}
 
       {/* Main Content */}
       <Tabs defaultValue="backups" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="backups" className="flex items-center gap-2">
             <History className="w-4 h-4" />
             Backup History
@@ -329,10 +269,6 @@ export function AdminBackupPanel() {
           <TabsTrigger value="create" className="flex items-center gap-2">
             <Database className="w-4 h-4" />
             Create Backup
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Logs
           </TabsTrigger>
         </TabsList>
 
@@ -371,14 +307,6 @@ export function AdminBackupPanel() {
                           <span className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
                             {backup.createdAt ? new Date(backup.createdAt).toLocaleDateString() : 'Unknown date'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <User className="w-4 h-4" />
-                            {backup.userName || 'Unknown user'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Database className="w-4 h-4" />
-                            {backup.tables?.length || 0} tables
                           </span>
                         </div>
                         
@@ -436,11 +364,10 @@ export function AdminBackupPanel() {
             <CardContent className="space-y-6">
               <div className="space-y-3">
                 <label className="text-sm font-medium">Backup Type</label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {[
                     { value: "full", label: "Full Backup", description: "Complete database backup" },
-                    { value: "incremental", label: "Incremental", description: "Changes since last backup" },
-                    { value: "partial", label: "Partial", description: "Selected tables only" }
+                    { value: "incremental", label: "Incremental", description: "Changes since last backup" }
                   ].map((type) => (
                     <div
                       key={type.value}
@@ -449,7 +376,7 @@ export function AdminBackupPanel() {
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
-                      onClick={() => setBackupType(type.value as any)}
+                      onClick={() => setBackupType(type.value as typeof backupType)}
                     >
                       <div className="font-medium">{type.label}</div>
                       <div className="text-xs text-gray-600">{type.description}</div>
@@ -458,35 +385,10 @@ export function AdminBackupPanel() {
                 </div>
               </div>
 
-              {backupType === "partial" && (
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">Select Tables</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {["users", "applications", "housing", "allocations", "complaints", "backup_logs"].map((table) => (
-                      <label key={table} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedTables.includes(table)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedTables(prev => [...prev, table]);
-                            } else {
-                              setSelectedTables(prev => prev.filter(t => t !== table));
-                            }
-                          }}
-                          className="rounded"
-                        />
-                        <span className="text-sm">{table}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div className="flex items-center gap-3">
                 <Button
                   onClick={handleCreateBackup}
-                  disabled={isCreatingBackup || (backupType === "partial" && selectedTables.length === 0)}
+                  disabled={isCreatingBackup}
                   className="flex items-center gap-2"
                 >
                   {isCreatingBackup ? (
@@ -502,74 +404,6 @@ export function AdminBackupPanel() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="logs" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Backup Logs
-              </CardTitle>
-              <CardDescription>
-                View detailed logs for backup operations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {selectedBackupLogs.length > 0 ? (
-                <div className="space-y-3">
-                  {selectedBackupLogs.map((log) => (
-                    <div key={log.id} className="border rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-medium px-2 py-1 rounded ${
-                            log.level === 'ERROR' ? 'bg-red-100 text-red-800' :
-                            log.level === 'WARNING' ? 'bg-yellow-100 text-yellow-800' :
-                            log.level === 'SUCCESS' ? 'bg-green-100 text-green-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {log.level}
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {new Date(log.timestamp).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-sm font-medium">{log.message}</p>
-                      {log.details && (
-                        <details className="mt-2">
-                          <summary className="text-xs text-gray-600 cursor-pointer">Details</summary>
-                          <pre className="text-xs text-gray-500 mt-1 bg-gray-50 p-2 rounded">
-                            {JSON.stringify(JSON.parse(log.details), null, 2)}
-                          </pre>
-                        </details>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No logs available</h3>
-                  <p className="text-gray-600 mb-4">Select a backup to view its logs</p>
-                  <div className="space-y-2">
-                    {backups.slice(0, 3).map((backup) => (
-                      <Button
-                        key={backup.id}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewLogs(backup.id)}
-                        disabled={isLoadingLogs}
-                        className="w-full justify-start"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        {backup.filename || 'Unknown backup'}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

@@ -67,8 +67,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
           children
         )}
       </span>
-      {/* Shimmer effect */}
-      <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[var(--transition-slow)] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
     </button>
   );
 });

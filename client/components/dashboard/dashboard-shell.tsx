@@ -298,7 +298,7 @@ export function DashboardShell({
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-[var(--foreground)] mb-1 leading-snug">Department</label>
+                        <label className="block text-sm font-medium text-[var(--foreground)] mb-1 leading-snug">College</label>
                         <div className="px-3 py-2 bg-gradient-to-r from-[var(--color-green)]/10 to-[var(--color-yellow)]/10 rounded-md text-sm leading-normal">
                           {editForm.department || 'N/A'}
                         </div>

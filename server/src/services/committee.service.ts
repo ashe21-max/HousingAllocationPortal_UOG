@@ -17,6 +17,7 @@ import {
 } from '../repository/committee.repository.js';
 import {
   findLecturerDocumentById,
+  findLecturerDocumentsByApplicationId,
   findLecturerDocumentsByUserId,
 } from '../repository/document.repository.js';
 import { canTransitionApplicationStatus } from '../utils/application-status.js';
@@ -33,7 +34,28 @@ export async function listCommitteeApplications(
   query: CommitteeApplicationListQueryDto,
 ) {
   const validated = validateCommitteeApplicationListQuery(query);
-  return findCommitteeApplications(validated);
+  const applications = await findCommitteeApplications(validated);
+  
+  // Process applications to extract score from notes if score snapshot is not available
+  return applications.map((app) => {
+    if (app.finalScore || !app.notes) {
+      return app;
+    }
+    
+    try {
+      const parsedNotes = JSON.parse(app.notes);
+      if (parsedNotes.score && parsedNotes.score.final !== undefined) {
+        return {
+          ...app,
+          finalScore: parsedNotes.score.final,
+        };
+      }
+    } catch (e) {
+      // Could not parse notes, return original
+    }
+    
+    return app;
+  });
 }
 
 export async function getCommitteeApplicationDetails(applicationIdInput: string) {
@@ -44,10 +66,58 @@ export async function getCommitteeApplicationDetails(applicationIdInput: string)
     throw new AppError('Application not found', 404, 'APPLICATION_NOT_FOUND');
   }
 
-  const documents = await findLecturerDocumentsByUserId(application.userId);
+  console.log('Fetching documents for application:', application.id, 'user:', application.userId);
+  let documents = await findLecturerDocumentsByApplicationId(application.id);
+  console.log('Documents by applicationId:', documents.length);
+
+  // Fallback: if no documents found by applicationId, try by userId
+  // This handles documents uploaded before the applicationId association was added
+  if (documents.length === 0) {
+    console.log('No documents by applicationId, trying by userId...');
+    documents = await findLecturerDocumentsByUserId(application.userId);
+    console.log('Documents by userId:', documents.length);
+    console.log('Documents:', documents);
+  }
+
+  // Extract score from notes if score snapshot is not available
+  let scoreData = {
+    scoreBreakdown: application.scoreBreakdown,
+    scoreBaseTotal: application.scoreBaseTotal,
+    scoreBonusTotal: application.scoreBonusTotal,
+    scoreFinal: application.scoreFinal,
+  };
+
+  if (!application.scoreFinal && application.notes) {
+    try {
+      const parsedNotes = JSON.parse(application.notes);
+      if (parsedNotes.score) {
+        scoreData = {
+          scoreBreakdown: [
+            { criteria: 'Educational Title', weightLabel: '40%', yourPoints: parsedNotes.educationalTitle ? 100 : 0, score: parsedNotes.score.educationalTitle || 0, kind: 'base' },
+            { criteria: 'Educational Level', weightLabel: '5%', yourPoints: parsedNotes.educationalLevel ? 100 : 0, score: parsedNotes.score.educationalLevel || 0, kind: 'base' },
+            { criteria: 'Service Years', weightLabel: '35%', yourPoints: parsedNotes.startDateAtUog ? 100 : 0, score: parsedNotes.score.serviceYears || 0, kind: 'base' },
+            { criteria: 'Responsibility', weightLabel: '10%', yourPoints: parsedNotes.responsibility ? 100 : 0, score: parsedNotes.score.responsibility || 0, kind: 'base' },
+            { criteria: 'Family Status', weightLabel: '10%', yourPoints: parsedNotes.familyStatus ? 100 : 0, score: parsedNotes.score.familyStatus || 0, kind: 'base' },
+            { criteria: 'Base Total', weightLabel: '100%', yourPoints: null, score: parsedNotes.score.baseTotal || 0, kind: 'total' },
+            { criteria: 'Female Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.isFemale ? 5 : null, score: parsedNotes.score.femaleBonus || 0, kind: 'bonus' },
+            { criteria: 'Disability Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.isDisabled ? 5 : null, score: parsedNotes.score.disabilityBonus || 0, kind: 'bonus' },
+            { criteria: 'Chronic Illness Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.hasChronicIllness ? 3 : null, score: parsedNotes.score.chronicIllnessBonus || 0, kind: 'bonus' },
+            { criteria: 'Spouse Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.hasSpouseAtUog ? 5 : null, score: parsedNotes.score.spouseBonus || 0, kind: 'bonus' },
+            { criteria: 'FINAL SCORE', weightLabel: '', yourPoints: null, score: parsedNotes.score.final || 0, kind: 'total' },
+          ],
+          scoreBaseTotal: parsedNotes.score.baseTotal || 0,
+          scoreBonusTotal: (parsedNotes.score.femaleBonus || 0) + (parsedNotes.score.disabilityBonus || 0) + (parsedNotes.score.chronicIllnessBonus || 0) + (parsedNotes.score.spouseBonus || 0),
+          scoreFinal: parsedNotes.score.final || 0,
+        };
+      }
+    } catch (e) {
+      console.log('Could not parse score from application notes:', e);
+    }
+  }
 
   return {
     ...application,
+    ...scoreData,
     documents,
   };
 }

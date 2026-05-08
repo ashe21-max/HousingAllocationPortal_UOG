@@ -17,7 +17,7 @@ export default function AdminCreateUserPage() {
 
         title="Create User"
 
-        description="Create new users and assign role/department."
+        description="Create new users and assign role/college."
 
       >
 

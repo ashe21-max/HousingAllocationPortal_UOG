@@ -8,7 +8,17 @@ export const housingSchema = z.object({
   condition: z.enum(["New", "Good", "Needs Repair", "Under Maintenance"]),
   status: z.enum(["Available", "Occupied", "Reserved"]),
   location: z.string().trim().min(2, "Location must be at least 2 characters."),
-});
+}).refine(
+  (data) => {
+    // This is a frontend hint - actual uniqueness is enforced on backend
+    // Room number must be unique within the same building, location, and block
+    return true;
+  },
+  {
+    message: "Room number must be unique within the same building, location, and block.",
+    path: ["roomNumber"],
+  }
+);
 
 export type HousingFormValues = z.infer<typeof housingSchema>;
 

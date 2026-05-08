@@ -2,7 +2,11 @@ import type { SaveApplicationDraftDto } from '../dtos/application.dto.js';
 import { AppError } from '../errorHandler/app-error.js';
 import { findUserById } from '../repository/user.repository.js';
 import { findHousingUnitById, findHousingUnits } from '../repository/housing.repository.js';
-import { findLatestScoreSnapshotByUserId } from '../repository/scoring.repository.js';
+import { 
+  findLatestScoreSnapshotByUserId,
+  createScoreSnapshot,
+  findLatestScoringPolicyId,
+} from '../repository/scoring.repository.js';
 import {
   createApplicationDraft,
   findActiveRoundsForLecturer,
@@ -20,6 +24,8 @@ import {
   validateApplicationId,
   validateSaveApplicationDraftInput,
 } from '../validators/application.validator.js';
+import { calculateApplicationScore } from './scoring/calculate-application-score.js';
+import { mapCriteriaToNumericInput } from './scoring/map-criteria-to-numeric-input.js';
 
 export async function saveMyApplicationDraft(
   userId: string,
@@ -78,8 +84,51 @@ export async function saveMyApplicationDraft(
 
   const existing = await findApplicationByUserAndRound(userId, validatedInput.roundId);
 
+  // Extract and sync score from notes if available
+  let scoreSnapshotId: string | undefined;
+  if (validatedInput.notes) {
+    try {
+      const parsedNotes = JSON.parse(validatedInput.notes);
+      if (parsedNotes.score) {
+        // Create a score snapshot from the form data
+        const scoringPolicyId = await findLatestScoringPolicyId();
+        const scoreData = {
+          breakdown: [
+            { criteria: 'Educational Title', weightLabel: '40%', yourPoints: parsedNotes.educationalTitle ? 100 : 0, score: parsedNotes.score.educationalTitle || 0, kind: 'base' as const },
+            { criteria: 'Educational Level', weightLabel: '5%', yourPoints: parsedNotes.educationalLevel ? 100 : 0, score: parsedNotes.score.educationalLevel || 0, kind: 'base' as const },
+            { criteria: 'Service Years', weightLabel: '35%', yourPoints: parsedNotes.startDateAtUog ? 100 : 0, score: parsedNotes.score.serviceYears || 0, kind: 'base' as const },
+            { criteria: 'Responsibility', weightLabel: '10%', yourPoints: parsedNotes.responsibility ? 100 : 0, score: parsedNotes.score.responsibility || 0, kind: 'base' as const },
+            { criteria: 'Family Status', weightLabel: '10%', yourPoints: parsedNotes.familyStatus ? 100 : 0, score: parsedNotes.score.familyStatus || 0, kind: 'base' as const },
+            { criteria: 'Base Total', weightLabel: '100%', yourPoints: null, score: parsedNotes.score.baseTotal || 0, kind: 'total' as const },
+            { criteria: 'Female Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.isFemale ? 5 : null, score: parsedNotes.score.femaleBonus || 0, kind: 'bonus' as const },
+            { criteria: 'Disability Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.isDisabled ? 5 : null, score: parsedNotes.score.disabilityBonus || 0, kind: 'bonus' as const },
+            { criteria: 'Chronic Illness Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.hasChronicIllness ? 3 : null, score: parsedNotes.score.chronicIllnessBonus || 0, kind: 'bonus' as const },
+            { criteria: 'Spouse Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.hasSpouseAtUog ? 5 : null, score: parsedNotes.score.spouseBonus || 0, kind: 'bonus' as const },
+            { criteria: 'FINAL SCORE', weightLabel: '', yourPoints: null, score: parsedNotes.score.final || 0, kind: 'total' as const },
+          ],
+          baseTotal: parsedNotes.score.baseTotal || 0,
+          bonusTotal: (parsedNotes.score.femaleBonus || 0) + (parsedNotes.score.disabilityBonus || 0) + (parsedNotes.score.chronicIllnessBonus || 0) + (parsedNotes.score.spouseBonus || 0),
+          finalScoreUncapped: parsedNotes.score.final || 0,
+          finalScore: parsedNotes.score.final || 0,
+        };
+        
+        const snapshot = await createScoreSnapshot(
+          userId,
+          scoreData,
+          scoringPolicyId,
+        );
+        scoreSnapshotId = snapshot.id;
+      }
+    } catch (e) {
+      console.log('Could not parse score from application notes:', e);
+    }
+  }
+
   if (!existing) {
-    const created = await createApplicationDraft(userId, validatedInput);
+    const created = await createApplicationDraft(userId, {
+      ...validatedInput,
+      scoreSnapshotId: scoreSnapshotId || null,
+    });
     if (!created) {
       throw new AppError(
         'Failed to save application draft',
@@ -96,7 +145,10 @@ export async function saveMyApplicationDraft(
     message: 'All status validation removed for testing'
   });
 
-  const updated = await updateApplicationDraft(existing.id, userId, validatedInput);
+  const updated = await updateApplicationDraft(existing.id, userId, {
+    ...validatedInput,
+    scoreSnapshotId: scoreSnapshotId || existing.scoreSnapshotId,
+  });
   if (!updated) {
     throw new AppError(
       'Failed to update application draft',

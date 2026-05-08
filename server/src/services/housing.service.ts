@@ -35,7 +35,7 @@ export async function registerHousingUnit(input: CreateHousingUnitDto) {
 
     if (databaseError.code === '23505') {
       throw new AppError(
-        'A room with this block number and room number already exists',
+        'A room with this building name, location, block number, and room number already exists. Room numbers must be unique within the same building, location, and block.',
         409,
         'HOUSE_ALREADY_EXISTS',
       );

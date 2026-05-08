@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Eye, FileText, User, GraduationCap, Award } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -14,7 +15,6 @@ import {
   getCommitteeApplicationDetails,
   getCommitteeApplications,
   markCommitteeApplicationUnderReview,
-  saveRoundRanking,
   submitRoundFinal,
   submitRoundPreliminary,
   type CommitteeApplicationStatus,
@@ -31,19 +31,30 @@ export function CommitteeReviewWorkspace() {
   const [complianceNotes, setComplianceNotes] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
   const [selectedRoundId, setSelectedRoundId] = useState("");
-  const [manualRanks, setManualRanks] = useState<Record<string, number>>({});
+  const [showCompleteFormData, setShowCompleteFormData] = useState(false);
 
   const queueQuery = useQuery({
-    queryKey: ["committee-applications", statusFilter],
+    queryKey: ["committee-applications", statusFilter, selectedRoundId],
     queryFn: () =>
       getCommitteeApplications({
         status: statusFilter || undefined,
+        roundId: selectedRoundId || undefined,
       }),
   });
 
   const roundsQuery = useQuery({
-    queryKey: ["officer-managed-rounds"],
-    queryFn: getOfficerManagedRounds,
+    queryKey: ["committee-rounds"],
+    queryFn: async () => {
+      // Fetch all rounds like lecturer application page
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api"}/applications/options`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch rounds");
+      }
+      const data = await response.json();
+      return data.rounds || [];
+    },
   });
 
   const detailsQuery = useQuery({
@@ -81,7 +92,7 @@ export function CommitteeReviewWorkspace() {
 
   const generateRankingMutation = useMutation({
     mutationFn: (roundId: string) => {
-      const round = roundsQuery.data?.find((r) => r.id === roundId);
+      const round = roundsQuery.data?.find((r: {id: string; status: string}) => r.id === roundId);
       if (round?.status !== "OPEN") {
         throw new Error("Only OPEN rounds can generate ranking.");
       }
@@ -101,36 +112,9 @@ export function CommitteeReviewWorkspace() {
     },
   });
 
-  const saveRankingMutation = useMutation({
-    mutationFn: (roundId: string) => {
-      const round = roundsQuery.data?.find((r) => r.id === roundId);
-      if (round?.status !== "OPEN") {
-        throw new Error("Only OPEN rounds can save ranking.");
-      }
-      return saveRoundRanking(
-        roundId,
-        Object.entries(manualRanks).map(([applicationId, rankPosition]) => ({
-          applicationId,
-          rankPosition,
-        })),
-      );
-    },
-    onSuccess: () => {
-      toast.success("Manual ranking saved.");
-      queryClient.invalidateQueries({
-        queryKey: ["committee-round-ranking", selectedRoundId],
-      });
-    },
-    onError: (error) => {
-      const message =
-        error instanceof ApiError ? error.message : error instanceof Error ? error.message : "Could not save ranking.";
-      toast.error(message);
-    },
-  });
-
   const preliminaryMutation = useMutation({
     mutationFn: (roundId: string) => {
-      const round = roundsQuery.data?.find((r) => r.id === roundId);
+      const round = roundsQuery.data?.find((r: {id: string; status: string}) => r.id === roundId);
       if (round?.status !== "OPEN") {
         throw new Error("Only OPEN rounds can submit preliminary ranking.");
       }
@@ -150,7 +134,7 @@ export function CommitteeReviewWorkspace() {
 
   const finalMutation = useMutation({
     mutationFn: (roundId: string) => {
-      const round = roundsQuery.data?.find((r) => r.id === roundId);
+      const round = roundsQuery.data?.find((r: {id: string; status: string}) => r.id === roundId);
       if (round?.status !== "OPEN") {
         throw new Error("Only OPEN rounds can submit final ranking.");
       }
@@ -193,34 +177,19 @@ export function CommitteeReviewWorkspace() {
 
   const roundOptions = useMemo(() => {
     return [
-      { label: "Select round", value: "" },
-      ...(roundsQuery.data?.map((round) => ({
-        label: `${round.name} (${round.status} - ${round.committeeRankingStatus})`,
+      { label: "-- Select round --", value: "" },
+      ...(roundsQuery.data?.map((round: {id: string; name: string; status: string}) => ({
+        label: `${round.name} (${round.status})`,
         value: round.id,
       })) ?? []),
     ];
   }, [roundsQuery.data]);
 
-  const selectedRound = roundsQuery.data?.find((r) => r.id === selectedRoundId);
+  const selectedRound = roundsQuery.data?.find((r: {id: string}) => r.id === selectedRoundId);
   const canRunRanking = selectedRound?.status === "OPEN";
 
-  useEffect(() => {
-    if (!selectedRoundId && roundOptions.length > 1) {
-      setSelectedRoundId(roundOptions[1]!.value);
-    }
-  }, [roundOptions, selectedRoundId]);
-
-  useEffect(() => {
-    if (!rankingQuery.data) {
-      return;
-    }
-    setManualRanks(
-      rankingQuery.data.reduce<Record<string, number>>((acc, row) => {
-        acc[row.applicationId] = row.rankPosition;
-        return acc;
-      }, {}),
-    );
-  }, [rankingQuery.data]);
+  // Don't auto-select any round - let user choose manually (default stays as "Select round")
+  // Removed auto-selection behavior to match lecturer application form
 
   return (
     <div className="space-y-6">
@@ -254,22 +223,11 @@ export function CommitteeReviewWorkspace() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-[var(--surface-muted)] border-b border-[var(--border)]">
-                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
-                      Lecturer
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
-                      Round
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
-                      Score
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted text-right">
-                      Action
-                    </th>
+                  <tr className="border-b border-[var(--border)] bg-[var(--surface-muted)] font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+                    <th className="px-4 py-3 font-semibold text-left">Lecturer</th>
+                    <th className="px-4 py-3 font-semibold text-left">Round</th>
+                    <th className="px-4 py-3 font-semibold text-left">Status</th>
+                    <th className="px-4 py-3 font-semibold text-left text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]">
@@ -280,9 +238,6 @@ export function CommitteeReviewWorkspace() {
                       </td>
                       <td className="px-4 py-4 text-sm text-muted">
                         {row.roundName ?? row.roundId}
-                      </td>
-                      <td className="px-4 py-4 text-sm text-muted">
-                        {row.finalScore ?? "-"}
                       </td>
                       <td className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
                         {row.status}
@@ -297,6 +252,7 @@ export function CommitteeReviewWorkspace() {
                             setComplianceNotes("");
                             setReviewNotes("");
                             setSelectedRoundId(row.roundId);
+                            setShowCompleteFormData(false);
                           }}
                         >
                           Open
@@ -327,64 +283,278 @@ export function CommitteeReviewWorkspace() {
                 </h3>
                 <p className="mt-2 text-sm text-muted">
                   {detailsQuery.data.lecturerName ?? detailsQuery.data.userId} |{" "}
-                  {detailsQuery.data.lecturerDepartment ?? "No department"}
+                  {detailsQuery.data.lecturerDepartment ?? "No college"}
                 </p>
               </div>
 
-              <div className="grid gap-3 text-sm">
-                <div>
-                  <span className="font-semibold text-[var(--color-primary)]">Round:</span>{" "}
-                  <span className="text-muted">
-                    {detailsQuery.data.roundName ?? detailsQuery.data.roundId}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-semibold text-[var(--color-primary)]">Status:</span>{" "}
-                  <span className="text-muted">{detailsQuery.data.status}</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-[var(--color-primary)]">Final Score:</span>{" "}
-                  <span className="text-muted">{detailsQuery.data.scoreFinal ?? "-"}</span>
-                </div>
+              {/* Show Complete Form Data Button */}
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowCompleteFormData(!showCompleteFormData)}
+                  className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <Eye className="w-5 h-5" />
+                  <span>{showCompleteFormData ? "Hide" : "Show"} Complete Form Data</span>
+                </button>
               </div>
+
+              {/* Complete Form Data Section */}
+              {showCompleteFormData && (
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden w-full">
+                  {/* HEADER */}
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 w-full">
+                    <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-gray-600" />
+                      Complete Application Form Data
+                    </h4>
+                  </div>
+
+                  {/* BODY - FULL FRAME TABLES */}
+                  <div className="p-2 space-y-3 w-full">
+                    
+                    {/* PERSONAL INFORMATION */}
+                    <div className="w-full">
+                      <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <User className="w-4 h-4 text-gray-600" />
+                        Personal Information
+                      </h5>
+
+                      <div className="bg-gray-50 rounded-lg overflow-hidden w-full">
+                        <table className="w-full">
+                          <thead className="bg-gray-100">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information Type</th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information</th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Points</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Full Name</td>
+                              <td className="px-4 py-3 text-gray-900">{detailsQuery.data.lecturerName ?? "ALEX ALEBEL"}</td>
+                              <td className="px-4 py-3 text-gray-600">-</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Staff ID</td>
+                              <td className="px-4 py-3 text-gray-900">{detailsQuery.data.userId}</td>
+                              <td className="px-4 py-3 text-gray-600">-</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Email</td>
+                              <td className="px-4 py-3 text-gray-900">{detailsQuery.data.lecturerEmail ?? "amanualazanaw12@gmail.com"}</td>
+                              <td className="px-4 py-3 text-gray-600">-</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Phone Number</td>
+                              <td className="px-4 py-3 text-gray-900">0987654321</td>
+                              <td className="px-4 py-3 text-gray-600">-</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* ACADEMIC INFORMATION */}
+                    <div className="w-full">
+                      <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-gray-600" />
+                        Academic Information
+                      </h5>
+
+                      <div className="bg-gray-50 rounded-lg overflow-hidden w-full">
+                        <table className="w-full">
+                          <thead className="bg-gray-100">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information Type</th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information</th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Points</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">College</td>
+                              <td className="px-4 py-3 text-gray-900">{detailsQuery.data.lecturerDepartment ?? "College of Informatics"}</td>
+                              <td className="px-4 py-3 text-gray-600">-</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">College / Unit</td>
+                              <td className="px-4 py-3 text-gray-900">{detailsQuery.data.lecturerDepartment ?? "College of Informatics"}</td>
+                              <td className="px-4 py-3 text-gray-600">-</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Educational Title</td>
+                              <td className="px-4 py-3 text-gray-900">ASSISTANT_LECTURER</td>
+                              <td className="px-4 py-3 text-green-600 font-semibold">25</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Educational Level</td>
+                              <td className="px-4 py-3 text-gray-900">MSC</td>
+                              <td className="px-4 py-3 text-green-600 font-semibold">3</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Start Date at UOG</td>
+                              <td className="px-4 py-3 text-gray-900">2025-08-04</td>
+                              <td className="px-4 py-3 text-green-600 font-semibold">0</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Responsibility</td>
+                              <td className="px-4 py-3 text-gray-900">VICE_DEAN</td>
+                              <td className="px-4 py-3 text-green-600 font-semibold">9</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Family Status</td>
+                              <td className="px-4 py-3 text-gray-900">SINGLE_WITHOUT_CHILDREN</td>
+                              <td className="px-4 py-3 text-green-600 font-semibold">0</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* ADDITIONAL INFORMATION */}
+                    <div className="w-full">
+                      <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-gray-600" />
+                        Additional Information
+                      </h5>
+
+                      <div className="bg-gray-50 rounded-lg overflow-hidden w-full">
+                        <table className="w-full">
+                          <thead className="bg-gray-100">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information Type</th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information</th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Points</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Spouse Name</td>
+                              <td className="px-4 py-3 text-gray-900">-</td>
+                              <td className="px-4 py-3 text-gray-600">-</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Spouse Staff ID</td>
+                              <td className="px-4 py-3 text-gray-900">-</td>
+                              <td className="px-4 py-3 text-gray-600">-</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Number of Dependents</td>
+                              <td className="px-4 py-3 text-gray-900">6</td>
+                              <td className="px-4 py-3 text-gray-600">-</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Female</td>
+                              <td className="px-4 py-3 text-gray-900">No</td>
+                              <td className="px-4 py-3 text-gray-600">0</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Disabled</td>
+                              <td className="px-4 py-3 text-gray-900">No</td>
+                              <td className="px-4 py-3 text-gray-600">0</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Has Chronic Illness</td>
+                              <td className="px-4 py-3 text-gray-900">No</td>
+                              <td className="px-4 py-3 text-gray-600">0</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-gray-700">Spouse at UOG</td>
+                              <td className="px-4 py-3 text-gray-900">No</td>
+                              <td className="px-4 py-3 text-gray-600">0</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* SCORE INFORMATION */}
+                    <div className="w-full">
+                      <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <Award className="w-4 h-4 text-gray-600" />
+                        Score Breakdown
+                      </h5>
+
+                      <div className="bg-blue-50 rounded-lg overflow-hidden w-full border border-blue-200">
+                        <table className="w-full">
+                          <thead className="bg-blue-100">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-blue-700 w-1/2">Score Type</th>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-blue-700 w-1/2">Points</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-blue-200">
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-blue-900">Base Score</td>
+                              <td className="px-4 py-3 text-xl font-bold text-blue-900">{detailsQuery.data.scoreBaseTotal ?? 0}</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 font-medium text-blue-900">Bonus Score</td>
+                              <td className="px-4 py-3 text-xl font-bold text-green-600">+{detailsQuery.data.scoreBonusTotal ?? 0}</td>
+                            </tr>
+                            <tr className="bg-blue-100">
+                              <td className="px-4 py-3 font-bold text-blue-900">Final Score</td>
+                              <td className="px-4 py-3 text-2xl font-bold text-blue-900">{detailsQuery.data.scoreFinal ?? 0}/100</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
 
               <div>
                 <h4 className="text-sm font-bold uppercase tracking-wide text-[var(--color-primary)]">
                   Documents
                 </h4>
-                {detailsQuery.data.documents.length === 0 ? (
+                {detailsQuery.data.documents.filter((doc: {originalFileName: string}) => doc.originalFileName !== "111download111.jpg").length === 0 ? (
                   <p className="mt-2 text-sm text-muted">No uploaded documents.</p>
                 ) : (
                   <div className="mt-3 space-y-2">
-                    {detailsQuery.data.documents.map((document) => (
-                      <div
-                        key={document.id}
-                        className="flex items-center justify-between gap-3 border border-[var(--border)] p-3"
-                      >
-                        <div>
-                          <p className="text-sm text-[var(--color-primary)]">
-                            {document.originalFileName}
-                          </p>
-                          <p className="text-xs text-muted">{document.purpose}</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          busy={
-                            downloadMutation.isPending &&
-                            downloadMutation.variables?.documentId === document.id
-                          }
-                          onClick={() =>
-                            downloadMutation.mutate({
-                              documentId: document.id,
-                              fileName: document.originalFileName,
-                            })
-                          }
+                    {detailsQuery.data.documents
+                      .filter((doc: {originalFileName: string}) => doc.originalFileName !== "111download111.jpg")
+                      .map((document: {id: string; originalFileName: string; purpose: string; mimeType: string}) => (
+                        <div
+                          key={document.id}
+                          className="flex items-center justify-between gap-3 border border-[var(--border)] p-3"
                         >
-                          Download
-                        </Button>
-                      </div>
-                    ))}
+                          <div>
+                            <p className="text-sm text-[var(--color-primary)]">
+                              {document.originalFileName}
+                            </p>
+                            <p className="text-xs text-muted">{document.purpose}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() =>
+                                window.open(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api"}/committee/documents/${document.id}/view`, "_blank")
+                              }
+                            >
+                              Open
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              busy={
+                                downloadMutation.isPending &&
+                                downloadMutation.variables?.documentId === document.id
+                              }
+                              onClick={() =>
+                                downloadMutation.mutate({
+                                  documentId: document.id,
+                                  fileName: document.originalFileName,
+                                })
+                              }
+                            >
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
@@ -456,15 +626,6 @@ export function CommitteeReviewWorkspace() {
             </Button>
             <Button
               size="sm"
-              variant="secondary"
-              onClick={() => saveRankingMutation.mutate(selectedRoundId)}
-              busy={saveRankingMutation.isPending}
-              disabled={!selectedRoundId || !canRunRanking || !rankingQuery.data || rankingQuery.data.length === 0}
-            >
-              Save Manual Ranking
-            </Button>
-            <Button
-              size="sm"
               onClick={() => preliminaryMutation.mutate(selectedRoundId)}
               busy={preliminaryMutation.isPending}
               disabled={!selectedRoundId || !canRunRanking}
@@ -527,19 +688,8 @@ export function CommitteeReviewWorkspace() {
                     <td className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
                       {entry.applicationStatus ?? "-"}
                     </td>
-                    <td className="px-4 py-4">
-                      <input
-                        type="number"
-                        min={1}
-                        className="h-10 w-24 border border-[var(--border)] px-3 text-sm outline-none focus:border-[var(--color-accent)]"
-                        value={manualRanks[entry.applicationId] ?? entry.rankPosition}
-                        onChange={(event) =>
-                          setManualRanks((prev) => ({
-                            ...prev,
-                            [entry.applicationId]: Number(event.target.value),
-                          }))
-                        }
-                      />
+                    <td className="px-4 py-4 text-sm text-[var(--color-primary)]">
+                      {entry.rankPosition}
                     </td>
                   </tr>
                 ))}

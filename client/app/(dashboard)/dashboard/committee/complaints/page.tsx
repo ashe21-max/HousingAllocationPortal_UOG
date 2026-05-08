@@ -7,7 +7,7 @@ export default function CommitteeComplaintsPage() {
     <DashboardGate role="COMMITTEE">
       <DashboardShell
         title="Respond to Complaints"
-        description="Respond to complaint threads routed to your department."
+        description="Respond to complaint threads routed to your college."
       >
         <CommitteeComplaintsPanel />
       </DashboardShell>

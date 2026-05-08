@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ export function AdminCreateUserForm({ onCreated }: AdminCreateUserFormProps) {
   const emailError = email ? validateEmail(email) : null;
   const departmentRequired = departmentRoles.has(role);
   const departmentError =
-    departmentRequired && !department ? "Department is required for this role." : null;
+    departmentRequired && !department ? "College is required for this role." : null;
 
   function handleRoleChange(nextRole: UserRole) {
     setRole(nextRole);
@@ -100,7 +99,6 @@ export function AdminCreateUserForm({ onCreated }: AdminCreateUserFormProps) {
             onChange={(event) => setName(event.target.value)}
             error={nameError}
             placeholder="Example Name"
-            icon={<UserRound className="h-4 w-4" />}
           />
           <Input
             label="Email"
@@ -118,7 +116,7 @@ export function AdminCreateUserForm({ onCreated }: AdminCreateUserFormProps) {
           />
           {departmentRequired ? (
             <Select
-              label="Department"
+              label="College"
               value={department}
               onChange={(event) =>
                 setDepartment(event.target.value as UserDepartment | "")
@@ -129,8 +127,8 @@ export function AdminCreateUserForm({ onCreated }: AdminCreateUserFormProps) {
           ) : null}
         </div>
 
-        <Button onClick={handleSubmit} busy={isPending} className="gap-2">
-          <Plus className="h-4 w-4" /> Create user
+        <Button onClick={handleSubmit} busy={isPending}>
+          Create user
         </Button>
       </div>
     </>

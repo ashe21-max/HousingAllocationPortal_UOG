@@ -30,6 +30,7 @@ const queueSelection = {
   preferredHousingBlockNumber: housingUnits.blockNumber,
   preferredHousingRoomNumber: housingUnits.roomNumber,
   finalScore: scoreSnapshots.finalScore,
+  scoreSnapshotId: applications.scoreSnapshotId,
   createdAt: applications.createdAt,
 };
 

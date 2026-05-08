@@ -9,6 +9,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
 import { randomUUID } from 'crypto';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
 export async function createBackupService(userId: string, backupData: CreateBackupDto): Promise<SystemBackup> {
   const { type, description, tables } = backupData;
@@ -70,8 +72,6 @@ export async function createBackupService(userId: string, backupData: CreateBack
     await logBackupService(backup.id, 'INFO', 'Executing pg_dump', { command: pgDumpCommand });
 
     // Execute pg_dump with proper environment
-    const { exec } = require('child_process');
-    const { promisify } = require('util');
     const execAsync = promisify(exec);
 
     const env = {

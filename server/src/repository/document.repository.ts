@@ -86,3 +86,11 @@ export async function findLecturerDocumentById(documentId: string) {
 
   return row ?? null;
 }
+
+export async function findLecturerDocumentsByApplicationId(applicationId: string) {
+  return db
+    .select(lecturerDocumentSelection)
+    .from(lecturerDocuments)
+    .where(eq(lecturerDocuments.applicationId, applicationId))
+    .orderBy(desc(lecturerDocuments.uploadedAt));
+}

@@ -75,6 +75,7 @@ export function AdminUserManagementPanel() {
   const [roleFilter, setRoleFilter] = useState<UserRole | "">("");
 
   const [activeFilter, setActiveFilter] = useState<"all" | "true" | "false">("all");
+  const [sortBy, setSortBy] = useState<"name-asc" | "name-desc" | "date-asc" | "date-desc">("name-asc");
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -274,7 +275,7 @@ export function AdminUserManagementPanel() {
 
     if (nameError || emailError || (departmentRequired && !editDepartment)) {
 
-      toast.error(nameError ?? emailError ?? "Department is required for this role.");
+      toast.error(nameError ?? emailError ?? "College is required for this role.");
 
       return;
 
@@ -316,7 +317,7 @@ export function AdminUserManagementPanel() {
 
         </h2>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-4">
+        <div className="mt-4 grid gap-3 md:grid-cols-5">
 
           <Input
 
@@ -375,6 +376,32 @@ export function AdminUserManagementPanel() {
               setActiveFilter(e.target.value as "all" | "true" | "false");
 
               setPage(1);
+
+            }}
+
+          />
+
+          <Select
+
+            label="Sort by"
+
+            options={[
+
+              { label: "A to Z", value: "name-asc" },
+
+              { label: "Z to A", value: "name-desc" },
+
+              { label: "Newest first", value: "date-desc" },
+
+              { label: "Oldest first", value: "date-asc" },
+
+            ]}
+
+            value={sortBy}
+
+            onChange={(e) => {
+
+              setSortBy(e.target.value as typeof sortBy);
 
             }}
 
@@ -454,7 +481,7 @@ export function AdminUserManagementPanel() {
 
                 <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
 
-                  Department
+                  College
 
                 </th>
 
@@ -476,7 +503,22 @@ export function AdminUserManagementPanel() {
 
             <tbody className="divide-y divide-[var(--border)]">
 
-              {usersQuery.data.items.map((user) => (
+              {[...usersQuery.data.items]
+                .sort((a, b) => {
+                  switch (sortBy) {
+                    case "name-asc":
+                      return (a.name || "").localeCompare(b.name || "");
+                    case "name-desc":
+                      return (b.name || "").localeCompare(a.name || "");
+                    case "date-asc":
+                      return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+                    case "date-desc":
+                      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+                    default:
+                      return 0;
+                  }
+                })
+                .map((user) => (
 
                 <tr key={user.id}>
 
@@ -712,7 +754,7 @@ export function AdminUserManagementPanel() {
 
               <Select
 
-                label="Department"
+                label="College"
 
                 options={departmentOptions}
 

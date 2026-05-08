@@ -1,14 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Building2, DoorOpen, MapPin, Pencil, X } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import { conditionOptions, roomTypeOptions, statusOptions } from "@/constants/housing";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import type { HousingUnit, UpdateHousingUnitPayload } from "@/lib/api/housing";
 import { ApiError } from "@/lib/api/client";
 import {
@@ -113,54 +111,84 @@ export function EditHousingModal({
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <Input
-                  label="Building name"
-                  icon={<Building2 className="h-4 w-4" />}
-                  error={errors.buildingName?.message}
-                  {...register("buildingName")}
-                />
-                <Input
-                  label="Location"
-                  icon={<MapPin className="h-4 w-4" />}
-                  error={errors.location?.message}
-                  {...register("location")}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Building name</label>
+                  <input
+                    type="text"
+                    className="w-full h-12 px-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-blue)] focus:border-transparent transition-all"
+                    {...register("buildingName")}
+                  />
+                  {errors.buildingName && <p className="text-sm text-[var(--color-red)] mt-1">{errors.buildingName.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Location</label>
+                  <input
+                    type="text"
+                    className="w-full h-12 px-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-blue)] focus:border-transparent transition-all"
+                    {...register("location")}
+                  />
+                  {errors.location && <p className="text-sm text-[var(--color-red)] mt-1">{errors.location.message}</p>}
+                </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <Input
-                  label="Block number"
-                  icon={<Building2 className="h-4 w-4" />}
-                  error={errors.blockNumber?.message}
-                  {...register("blockNumber")}
-                />
-                <Input
-                  label="Room number"
-                  icon={<DoorOpen className="h-4 w-4" />}
-                  error={errors.roomNumber?.message}
-                  {...register("roomNumber")}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Block number</label>
+                  <input
+                    type="text"
+                    className="w-full h-12 px-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-blue)] focus:border-transparent transition-all"
+                    {...register("blockNumber")}
+                  />
+                  {errors.blockNumber && <p className="text-sm text-[var(--color-red)] mt-1">{errors.blockNumber.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Room number</label>
+                  <input
+                    type="text"
+                    className="w-full h-12 px-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-blue)] focus:border-transparent transition-all"
+                    {...register("roomNumber")}
+                  />
+                  {errors.roomNumber && <p className="text-sm text-[var(--color-red)] mt-1">{errors.roomNumber.message}</p>}
+                </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-3">
-                <Select
-                  label="Room type"
-                  options={roomTypeOptions}
-                  error={errors.roomType?.message}
-                  {...register("roomType")}
-                />
-                <Select
-                  label="Status"
-                  options={statusOptions}
-                  error={errors.status?.message}
-                  {...register("status")}
-                />
-                <Select
-                  label="Condition"
-                  options={conditionOptions}
-                  error={errors.condition?.message}
-                  {...register("condition")}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Room type</label>
+                  <select
+                    className="w-full h-12 px-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-blue)] focus:border-transparent transition-all"
+                    {...register("roomType")}
+                  >
+                    {roomTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  {errors.roomType && <p className="text-sm text-[var(--color-red)] mt-1">{errors.roomType.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Status</label>
+                  <select
+                    className="w-full h-12 px-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-blue)] focus:border-transparent transition-all"
+                    {...register("status")}
+                  >
+                    {statusOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  {errors.status && <p className="text-sm text-[var(--color-red)] mt-1">{errors.status.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--foreground)] mb-2">Condition</label>
+                  <select
+                    className="w-full h-12 px-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-blue)] focus:border-transparent transition-all"
+                    {...register("condition")}
+                  >
+                    {conditionOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  {errors.condition && <p className="text-sm text-[var(--color-red)] mt-1">{errors.condition.message}</p>}
+                </div>
               </div>
 
               <div className="flex flex-col gap-3 pt-2 sm:flex-row">

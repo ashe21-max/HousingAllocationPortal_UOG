@@ -67,6 +67,7 @@ export async function createApplicationDraft(
       roundId: input.roundId,
       preferredHousingUnitId: input.preferredHousingUnitId,
       notes: input.notes,
+      scoreSnapshotId: input.scoreSnapshotId ?? null,
       status: 'DRAFT',
     })
     .returning(applicationSelection);
@@ -79,13 +80,24 @@ export async function updateApplicationDraft(
   userId: string,
   input: SaveApplicationDraftInput,
 ) {
+  const updateData: {
+    preferredHousingUnitId: string | null;
+    notes: string | null;
+    updatedAt: Date;
+    scoreSnapshotId?: string | null;
+  } = {
+    preferredHousingUnitId: input.preferredHousingUnitId,
+    notes: input.notes,
+    updatedAt: new Date(),
+  };
+  
+  if (input.scoreSnapshotId !== undefined) {
+    updateData.scoreSnapshotId = input.scoreSnapshotId;
+  }
+  
   const [updated] = await db
     .update(applications)
-    .set({
-      preferredHousingUnitId: input.preferredHousingUnitId,
-      notes: input.notes,
-      updatedAt: new Date(),
-    })
+    .set(updateData)
     .where(and(eq(applications.id, applicationId), eq(applications.userId, userId)))
     .returning(applicationSelection);
 

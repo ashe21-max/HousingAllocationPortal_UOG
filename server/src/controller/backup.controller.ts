@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { CreateBackupDto, CreateBackupScheduleDto, UpdateBackupScheduleDto } from '../dtos/backup.dto.js';
 import { AppError } from '../errorHandler/app-error.js';
+import { createReadStream } from 'fs';
 import { db } from '../lib/db/index.js';
 import { systemBackups } from '../lib/db/schema/backup.js';
 import { users } from '../lib/db/schema/auth.js';
@@ -110,8 +111,7 @@ export async function downloadBackupController(
     res.setHeader('Content-Disposition', `attachment; filename="${backup.filename}"`);
 
     // Stream the actual backup file to the client
-    const fs = require('fs');
-    const fileStream = fs.createReadStream(filePath);
+    const fileStream = createReadStream(filePath);
     fileStream.pipe(res);
   } catch (error) {
     next(error);

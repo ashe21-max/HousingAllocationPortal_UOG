@@ -52,7 +52,7 @@ export function SignupPanel() {
 
   const emailError = email ? validateEmail(email) : null;
 
-  const departmentError = !department ? "Department is required." : null;
+  const departmentError = !department ? "College is required." : null;
 
 
 
@@ -190,7 +190,7 @@ export function SignupPanel() {
               />
 
               <Select
-                label="Department"
+                label="College"
                 value={department}
                 onChange={(event) => setDepartment(event.target.value as UserDepartment | "")}
                 options={departmentOptions}

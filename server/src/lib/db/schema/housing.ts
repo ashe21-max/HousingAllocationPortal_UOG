@@ -53,7 +53,9 @@ export const housingUnits = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex('housing_units_block_room_unique').on(
+    uniqueIndex('housing_units_building_location_block_room_unique').on(
+      table.buildingName,
+      table.location,
       table.blockNumber,
       table.roomNumber,
     ),

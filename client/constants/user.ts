@@ -23,7 +23,7 @@ export const roleOptions: Array<{ label: string; value: UserRole }> = [
 export const departmentRoles = new Set<UserRole>(["LECTURER", "COMMITTEE"]);
 
 export const departmentOptions: Array<{ label: string; value: UserDepartment | "" }> = [
-  { label: "Choose department", value: "" },
+  { label: "Choose college", value: "" },
   {
     label: "College of Medicine and Health Sciences",
     value: "College of Medicine and Health Sciences",

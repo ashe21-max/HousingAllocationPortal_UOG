@@ -92,6 +92,13 @@
       "when": 1777673457486,
       "tag": "0012_clear_adam_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1778275820682,
+      "tag": "0013_lumpy_stephen_strange",
+      "breakpoints": true
     }
   ]
 }

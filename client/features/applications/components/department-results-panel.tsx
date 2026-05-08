@@ -6,18 +6,18 @@ import { getMyDepartmentResults } from "@/lib/api/applications";
 
 export function DepartmentResultsPanel() {
   const resultsQuery = useQuery({
-    queryKey: ["lecturer-department-results"],
+    queryKey: ["lecturer-college-results"],
     queryFn: getMyDepartmentResults,
   });
 
   if (resultsQuery.isLoading) {
-    return <section className="panel p-8 text-sm text-muted">Loading department results...</section>;
+    return <section className="panel p-8 text-sm text-muted">Loading college results...</section>;
   }
 
   if (resultsQuery.isError) {
     return (
       <section className="panel p-8 text-sm text-[var(--color-danger)]">
-        Could not load department results.
+        Could not load college results.
       </section>
     );
   }
@@ -28,16 +28,16 @@ export function DepartmentResultsPanel() {
     <section className="panel overflow-hidden">
       <div className="p-6 md:p-8 border-b border-[var(--border)]">
         <h2 className="text-lg font-bold uppercase tracking-tight text-[var(--color-primary)]">
-          Department Allocation Results
+          College Allocation Results
         </h2>
         <p className="mt-2 text-sm text-muted">
-          This table shows all allocation results for lecturers in your department.
+          This table shows all allocation results for lecturers in your college.
         </p>
       </div>
 
       {rows.length === 0 ? (
         <div className="p-8 text-sm text-muted">
-          No allocation results found for your department.
+          No allocation results found for your college.
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -48,7 +48,7 @@ export function DepartmentResultsPanel() {
                   Lecturer
                 </th>
                 <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
-                  Department
+                  College
                 </th>
                 <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
                   Round

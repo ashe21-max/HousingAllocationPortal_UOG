@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DashboardGate } from "@/components/dashboard/dashboard-gate";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { LecturerAnnouncementsPanel } from "@/features/applications/components/lecturer-announcements-panel";
 
 export default function LecturerDashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -15,6 +16,8 @@ export default function LecturerDashboardPage() {
       >
         {/* Content */}
         <div className="p-6 dashboard-bg">
+          <LecturerAnnouncementsPanel />
+
           <p className="text-[var(--foreground-secondary)]">
             Lecturer dashboard content here.
           </p>

@@ -61,7 +61,7 @@ export function OfficerAllocationPanel() {
 
   const roundOptions = useMemo(
     () => [
-      { label: "Select round for allocation", value: "" },
+      { label: "-- Select round --", value: "" },
       ...(
         roundsQuery.data?.map((round) => ({
           label: `${round.name} (${round.status} - ${round.committeeRankingStatus})`,
@@ -75,11 +75,7 @@ export function OfficerAllocationPanel() {
   const selectedRound = roundsQuery.data?.find((r) => r.id === selectedRoundId);
   const canRunAllocation = selectedRound?.status === "OPEN";
 
-  useEffect(() => {
-    if (!selectedRoundId && roundOptions.length > 1) {
-      setSelectedRoundId(roundOptions[1]!.value);
-    }
-  }, [roundOptions, selectedRoundId]);
+  // Don't auto-select any round - let user choose manually (default stays as "Select round")
 
   return (
     <section className="panel overflow-hidden">

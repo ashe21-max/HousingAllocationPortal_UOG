@@ -49,13 +49,13 @@ export function CommitteeComplaintsPanel() {
     <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       <section className="panel p-6">
         <h3 className="text-base font-bold uppercase tracking-tight text-[var(--color-primary)]">
-          Department Complaints
+          College Complaints
         </h3>
         {threadsQuery.isLoading ? (
           <p className="mt-3 text-sm text-muted">Loading...</p>
         ) : !threadsQuery.data || threadsQuery.data.length === 0 ? (
           <p className="mt-3 text-sm text-muted">
-            No complaints assigned to your department.
+            No complaints assigned to your college.
           </p>
         ) : (
           <div className="mt-4 space-y-2">

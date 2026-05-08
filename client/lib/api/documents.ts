@@ -77,6 +77,21 @@ export async function getMyDocuments() {
   return apiRequest<LecturerDocumentRow[]>("/documents/me");
 }
 
+export async function openMyDocument(documentId: string) {
+  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new ApiError("Could not open document", response.status);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+}
+
 export async function downloadMyDocument(documentId: string, fileName: string) {
   const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`, {
     method: "GET",

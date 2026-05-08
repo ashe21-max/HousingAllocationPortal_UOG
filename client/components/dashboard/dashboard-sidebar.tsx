@@ -27,7 +27,8 @@ import {
   Database,
   Shield,
   Download,
-  History
+  History,
+  Megaphone
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -79,6 +80,7 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
           { name: "Manage Rounds", href: "/dashboard/officer/rounds", icon: CalendarRange },
           { name: "Run Allocation", href: "/dashboard/officer/allocation", icon: ClipboardCheck },
           { name: "Generate Report", href: "/dashboard/officer/reports", icon: Download },
+          { name: "Announcements", href: "/dashboard/officer/announcements", icon: Megaphone },
           { name: "Manage Housing", href: "/dashboard/officer/housing", icon: Building2 },
            { name: "Settings", href: "/dashboard/officer/settings", icon: Settings },
           { name: "Support", href: "/dashboard/officer/support", icon: HelpCircle },

@@ -565,7 +565,7 @@ function SettingsPanel() {
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePersonalInfo('phone', e.target.value)}
                     />
                     <Input
-                      label="Department"
+                      label="College"
                       value={settings.personal.department}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePersonalInfo('department', e.target.value)}
                     />

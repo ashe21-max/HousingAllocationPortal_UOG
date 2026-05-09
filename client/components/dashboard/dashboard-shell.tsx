@@ -10,6 +10,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { logout } from "@/lib/api/auth";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
+import { DashboardMainAuthBackdrop } from "@/components/dashboard/dashboard-main-auth-backdrop";
 
 interface UserProfile {
   id: string;
@@ -26,12 +28,15 @@ type DashboardShellProps = {
   title: string | React.ReactNode;
   description: string;
   children: React.ReactNode;
+  /** Auth-style gradient behind sidebar + header + main (full shell). */
+  authStyleMainBackdrop?: boolean;
 };
 
 export function DashboardShell({
   title,
   description,
   children,
+  authStyleMainBackdrop = false,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -109,7 +114,19 @@ export function DashboardShell({
   };
 
   return (
-    <div className="flex h-screen w-full bg-gradient-to-br from-[var(--background-secondary)] to-[var(--background)] text-[var(--foreground)]">
+    <div
+      className={cn(
+        "relative flex h-screen w-full overflow-hidden text-[var(--foreground)]",
+        !authStyleMainBackdrop &&
+          "bg-gradient-to-br from-[var(--background-secondary)] to-[var(--background)]",
+      )}
+    >
+      {authStyleMainBackdrop && (
+        <div className="absolute inset-0 z-0">
+          <DashboardMainAuthBackdrop />
+        </div>
+      )}
+
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -119,7 +136,11 @@ export function DashboardShell({
       )}
 
       {/* Sidebar Component */}
-      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <DashboardSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        authGradientChrome={authStyleMainBackdrop}
+      />
 
       {/* Top Right Profile */}
       {editForm && (
@@ -338,24 +359,36 @@ export function DashboardShell({
       )}
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col overflow-hidden lg:ml-0">
+      <div className="relative z-10 flex flex-1 flex-col overflow-hidden lg:ml-0">
         {/* Header */}
-        <header className="h-20 flex items-center justify-between px-4 lg:px-8 bg-gradient-to-r from-[var(--color-blue)] via-[var(--color-green)] to-[var(--color-yellow)] text-white border-b border-[var(--border)] sticky top-0 z-30 shadow-lg">
-          <div className="flex items-center gap-4 flex-1">
+        <header
+          className={cn(
+            "sticky top-0 z-30 flex h-20 items-center justify-between border-b px-4 text-white lg:px-8",
+            authStyleMainBackdrop
+              ? "border-white/25 bg-white/10 backdrop-blur-xl shadow-lg"
+              : "border-[var(--border)] bg-gradient-to-r from-[var(--color-blue)] via-[var(--color-green)] to-[var(--color-yellow)] shadow-lg",
+          )}
+        >
+          <div className="flex flex-1 items-center gap-4">
             {/* Mobile Menu Button */}
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden p-2 hover:bg-white/20 rounded-full transition duration-300"
+              className="rounded-full p-2 transition duration-300 lg:hidden hover:bg-white/20"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="h-5 w-5 text-white" />
             </Button>
 
             <div className="relative w-full max-w-md lg:hidden">
-              <BrandLockup logoSize={32} subtitle="" />
+              <BrandLockup
+                logoSize={32}
+                subtitle=""
+                subtitleClassName="text-white/90"
+                titleClassName="text-white font-semibold"
+              />
             </div>
-                      </div>
+          </div>
 
           <div className="flex items-center gap-6">
             <a
@@ -372,19 +405,64 @@ export function DashboardShell({
         </header>
 
         {/* Content Scroll Area */}
-        <main className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-          <div className="max-w-[1400px] mx-auto space-y-10">
+        <main
+          className={cn(
+            "custom-scrollbar flex-1 overflow-y-auto",
+            authStyleMainBackdrop ? "relative" : "p-10",
+          )}
+        >
+          <div
+            className={cn(
+              "mx-auto max-w-[1400px] space-y-10",
+              authStyleMainBackdrop && "relative z-10 min-h-full p-10",
+            )}
+          >
             {/* Page Header */}
-            <div className="border-b border-[var(--border)] pb-8">
-              <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.24em] text-muted mb-4">
+            <div
+              className={cn(
+                "border-b pb-8",
+                authStyleMainBackdrop ? "border-white/25" : "border-[var(--border)]",
+              )}
+            >
+              <div
+                className={cn(
+                  "mb-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em]",
+                  authStyleMainBackdrop ? "text-white/75" : "text-muted",
+                )}
+              >
                 <span>Workspace</span>
-                <span className="text-[var(--border)]">/</span>
-                <span className="text-[var(--color-primary)] font-bold">{title}</span>
+                <span
+                  className={cn(
+                    authStyleMainBackdrop ? "text-white/35" : "text-[var(--border)]",
+                  )}
+                >
+                  /
+                </span>
+                <span
+                  className={cn(
+                    "font-bold",
+                    authStyleMainBackdrop ? "text-white" : "text-[var(--color-primary)]",
+                  )}
+                >
+                  {title}
+                </span>
               </div>
-              <h1 className="text-6xl font-bold bg-gradient-to-r from-[var(--color-blue)] via-[var(--color-green)] to-[var(--color-yellow)] bg-clip-text text-transparent leading-tight uppercase">
+              <h1
+                className={cn(
+                  "text-6xl font-bold uppercase leading-tight",
+                  authStyleMainBackdrop
+                    ? "text-white drop-shadow-md"
+                    : "bg-gradient-to-r from-[var(--color-blue)] via-[var(--color-green)] to-[var(--color-yellow)] bg-clip-text text-transparent",
+                )}
+              >
                 {title}
               </h1>
-              <p className="text-base text-muted mt-3 max-w-3xl leading-normal">
+              <p
+                className={cn(
+                  "mt-3 max-w-3xl text-base leading-normal",
+                  authStyleMainBackdrop ? "text-white/85" : "text-muted",
+                )}
+              >
                 {description}
               </p>
             </div>
@@ -393,6 +471,12 @@ export function DashboardShell({
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-400">
               {children}
             </div>
+
+            {authStyleMainBackdrop && (
+              <p className="pb-6 text-center text-sm text-white/70">
+                © 2026 Gondar University — University of Gondar House Allocation Portal
+              </p>
+            )}
           </div>
         </main>
       </div>

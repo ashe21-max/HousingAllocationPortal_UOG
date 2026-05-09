@@ -6,6 +6,7 @@ import {
   getApplicationFormOptions,
   getMyDepartmentAllocationResults,
   getMyApplications,
+  getMyApplicationDetails,
   saveMyApplicationDraft,
   submitMyApplication,
   deleteMyApplication,
@@ -126,6 +127,23 @@ export async function getMyDepartmentResultsController(
 
     const results = await getMyDepartmentAllocationResults(req.user.userId);
     res.status(200).json(results);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getMyApplicationDetailsController(
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
+    const details = await getMyApplicationDetails(req.user.userId, req.params.id);
+    res.status(200).json(details);
   } catch (error) {
     next(error);
   }

@@ -12,8 +12,10 @@ import {
   findAllApplicationRounds,
   findAvailableHousingUnits,
   findExistingRoundAllocationHousingUnitIds,
+  findExistingRoundAllocationHousingUnitIdsByStatus,
   findRoundAllocationResults,
   findRoundById,
+  findRoundPreliminaryRankedApplications,
   findRoundRankedApplications,
   findRoundsReadyForAllocation,
   insertAllocationResults,
@@ -142,17 +144,25 @@ export async function runOfficerRoundAllocation(
     throw new AppError('Round not found', 404, 'ROUND_NOT_FOUND');
   }
 
-  if (round.committeeRankingStatus !== 'FINAL_SUBMITTED') {
+  if (
+    round.committeeRankingStatus !== 'PRELIMINARY_SUBMITTED' &&
+    round.committeeRankingStatus !== 'FINAL_SUBMITTED'
+  ) {
     throw new AppError(
-      'Round ranking must be final before allocation',
+      'Round ranking must be submitted before allocation',
       409,
-      'RANKING_NOT_FINAL',
+      'RANKING_NOT_SUBMITTED',
     );
   }
 
+  const allocationStatus =
+    round.committeeRankingStatus === 'FINAL_SUBMITTED' ? 'PUBLISHED' : 'PRELIMINARY';
+
   const [rankedApplications, availableUnitsInitial, existingHousingIds] =
     await Promise.all([
-      findRoundRankedApplications(roundId),
+      allocationStatus === 'PRELIMINARY'
+        ? findRoundPreliminaryRankedApplications(roundId)
+        : findRoundRankedApplications(roundId),
       findAvailableHousingUnits(),
       findExistingRoundAllocationHousingUnitIds(roundId),
     ]);
@@ -165,9 +175,27 @@ export async function runOfficerRoundAllocation(
     );
   }
 
-  if (existingHousingIds.length > 0) {
-    await markHousingUnitsStatus(existingHousingIds, 'Available');
-    await clearRoundAllocationResults(roundId);
+  // We keep historical PRELIMINARY results even after FINAL allocation, so:
+  // - reruns clear only the allocation status we are generating
+  // - FINAL allocation also releases previously reserved PRELIMINARY units (legacy behavior)
+  const existingStatusHousingIds = await findExistingRoundAllocationHousingUnitIdsByStatus(
+    roundId,
+    allocationStatus,
+  );
+
+  if (existingStatusHousingIds.length > 0) {
+    await markHousingUnitsStatus(existingStatusHousingIds, 'Available');
+    await clearRoundAllocationResults(roundId, allocationStatus);
+  }
+
+  if (allocationStatus === 'PUBLISHED') {
+    const existingPreliminaryHousingIds = await findExistingRoundAllocationHousingUnitIdsByStatus(
+      roundId,
+      'PRELIMINARY',
+    );
+    if (existingPreliminaryHousingIds.length > 0) {
+      await markHousingUnitsStatus(existingPreliminaryHousingIds, 'Available');
+    }
   }
 
   const availableUnits = [...availableUnitsInitial];
@@ -218,12 +246,16 @@ export async function runOfficerRoundAllocation(
     );
   }
 
-  await insertAllocationResults(allocations);
-  await markHousingUnitsStatus(
-    allocations.map((item) => item.housingUnitId),
-    'Reserved',
-  );
-  await markApplicationsAllocated(allocations.map((item) => item.applicationId));
+  await insertAllocationResults(allocations, allocationStatus);
+
+  // Only FINAL/PUBLISHED allocation should reserve houses + set applications to ALLOCATED.
+  if (allocationStatus === 'PUBLISHED') {
+    await markHousingUnitsStatus(
+      allocations.map((item) => item.housingUnitId),
+      'Reserved',
+    );
+    await markApplicationsAllocated(allocations.map((item) => item.applicationId));
+  }
 
   const results = await findRoundAllocationResults(roundId);
 

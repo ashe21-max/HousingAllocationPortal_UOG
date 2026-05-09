@@ -37,13 +37,20 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { logout } from "@/lib/api/auth";
 import { getDashboardPath } from "@/lib/auth/redirect-by-role";
+import { cn } from "@/lib/utils";
 
 type DashboardSidebarProps = {
   isOpen?: boolean;
   onClose?: () => void;
+  /** Glass sidebar on auth-style full-page gradient (lecturer application, etc.). */
+  authGradientChrome?: boolean;
 };
 
-export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarProps) {
+export function DashboardSidebar({
+  isOpen = true,
+  onClose,
+  authGradientChrome = false,
+}: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { session, clearSession } = useAuth();
@@ -97,19 +104,26 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
   ];
 
   return (
-    <aside className={`
-      fixed lg:static top-0 left-0 z-50 h-full w-72 flex-col border-r border-[var(--border)] 
-      bg-gradient-to-br from-[var(--background-secondary)] to-[var(--background)] transform transition-transform duration-300 ease-in-out
-      ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
-      lg:translate-x-0 lg:flex
-    `}>
+    <aside
+      className={cn(
+        "fixed lg:static top-0 left-0 z-50 h-full w-72 flex-col transform transition-transform duration-300 ease-in-out",
+        authGradientChrome
+          ? "border-r border-white/25 bg-white/10 backdrop-blur-2xl"
+          : "border-r border-[var(--border)] bg-gradient-to-br from-[var(--background-secondary)] to-[var(--background)]",
+        isOpen ? "translate-x-0" : "-translate-x-full",
+        "lg:translate-x-0 lg:flex",
+      )}
+    >
       {/* Mobile Close Button */}
       <div className="lg:hidden absolute top-4 right-4 z-60">
         <Button
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-full"
+          className={cn(
+            "p-2 rounded-full",
+            authGradientChrome ? "hover:bg-white/20 text-white" : "hover:bg-gray-100",
+          )}
         >
           <X className="h-5 w-5" />
         </Button>
@@ -118,12 +132,24 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
       {/* Content */}
       <div className="flex flex-col h-full pt-12 lg:pt-0">
         {/* Header */}
-        <div className="h-20 flex items-center px-8 border-b border-[var(--border)] bg-gradient-to-r from-[var(--color-blue)] via-[var(--color-green)] to-[var(--color-yellow)] text-white shadow-lg">
+        <div
+          className={cn(
+            "h-20 flex items-center px-8 border-b bg-gradient-to-r from-[var(--color-blue)] via-[var(--color-green)] to-[var(--color-yellow)] text-white shadow-lg",
+            authGradientChrome ? "border-white/20" : "border-[var(--border)]",
+          )}
+        >
           <BrandLockup logoSize={48} subtitle="" title="UOG" />
         </div>
 
       {/* Search Bar */}
-        <div className="px-4 py-3 border-b border-[var(--border)] bg-white/50 backdrop-blur-sm">
+        <div
+          className={cn(
+            "px-4 py-3 border-b backdrop-blur-md",
+            authGradientChrome
+              ? "border-white/20 bg-white/20"
+              : "border-[var(--border)] bg-white/50 backdrop-blur-sm",
+          )}
+        >
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-blue)]/10 via-[var(--color-green)]/10 to-[var(--color-yellow)]/10 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-500 blur-sm" />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--foreground-secondary)] transition-all duration-300 group-hover:text-[var(--color-blue)] group-hover:scale-110 z-10" />
@@ -152,11 +178,33 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
                 if (filteredNavigation.length === 0) {
                   return (
                     <div className="text-center py-8 px-4">
-                      <div className="w-12 h-12 bg-[var(--background)] rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Search className="w-6 h-6 text-[var(--foreground-secondary)]" />
+                      <div
+                        className={cn(
+                          "w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3",
+                          authGradientChrome ? "bg-white/20" : "bg-[var(--background)]",
+                        )}
+                      >
+                        <Search
+                          className={cn(
+                            "w-6 h-6",
+                            authGradientChrome ? "text-white/80" : "text-[var(--foreground-secondary)]",
+                          )}
+                        />
                       </div>
-                      <p className="text-sm text-[var(--foreground-secondary)]">No navigation items found</p>
-                      <p className="text-xs text-[var(--foreground-tertiary)] mt-1">
+                      <p
+                        className={cn(
+                          "text-sm",
+                          authGradientChrome ? "text-white/85" : "text-[var(--foreground-secondary)]",
+                        )}
+                      >
+                        No navigation items found
+                      </p>
+                      <p
+                        className={cn(
+                          "text-xs mt-1",
+                          authGradientChrome ? "text-white/65" : "text-[var(--foreground-tertiary)]",
+                        )}
+                      >
                         {searchQuery.trim() 
                           ? `No items match "${searchQuery}"` 
                           : "Try searching for navigation items"}
@@ -174,7 +222,9 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
                       transition duration-300 hover:-translate-y-0.5 hover:shadow-md
                       ${isActive 
                         ? 'bg-gradient-to-r from-[var(--color-blue)] via-[var(--color-green)] to-[var(--color-yellow)] text-white shadow-lg shadow-[rgba(var(--color-blue-rgb),0.25)]' 
-                        : 'bg-white text-[var(--foreground)] hover:bg-gradient-to-r hover:from-[var(--color-blue)]/10 hover:via-[var(--color-green)]/10 hover:to-[var(--color-yellow)]/10 border border-[var(--border)] hover:border-[var(--color-blue)]'
+                        : authGradientChrome
+                          ? 'bg-white/95 text-[var(--foreground)] hover:bg-white border border-white/40 hover:border-[var(--color-blue)] shadow-sm'
+                          : 'bg-white text-[var(--foreground)] hover:bg-gradient-to-r hover:from-[var(--color-blue)]/10 hover:via-[var(--color-green)]/10 hover:to-[var(--color-yellow)]/10 border border-[var(--border)] hover:border-[var(--color-blue)]'
                       }
                     `}
                   >
@@ -204,7 +254,14 @@ export function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarPro
         </div>
 
         {/* Logout Section */}
-        <div className={`p-4 border-t border-[var(--border)] backdrop-blur-sm bg-white/50 transition-all duration-300`}>
+        <div
+          className={cn(
+            "p-4 border-t backdrop-blur-md transition-all duration-300",
+            authGradientChrome
+              ? "border-white/20 bg-white/20"
+              : "border-[var(--border)] bg-white/50 backdrop-blur-sm",
+          )}
+        >
           <Button 
             variant="ghost" 
             className={`w-full justify-start gap-3 h-12 px-4 rounded-3xl

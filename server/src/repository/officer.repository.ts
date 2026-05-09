@@ -243,6 +243,27 @@ export async function findRoundRankedApplications(roundId: string) {
     .orderBy(asc(committeeRankEntries.rankPosition));
 }
 
+// PRELIMINARY allocation should reflect the committee rank entries even before
+// applications are marked as RANKED (that only happens on FINAL submission).
+export async function findRoundPreliminaryRankedApplications(roundId: string) {
+  return db
+    .select({
+      applicationId: applications.id,
+      userId: applications.userId,
+      preferredHousingUnitId: applications.preferredHousingUnitId,
+      rankPosition: committeeRankEntries.rankPosition,
+    })
+    .from(committeeRankEntries)
+    .innerJoin(applications, eq(committeeRankEntries.applicationId, applications.id))
+    .where(
+      and(
+        eq(committeeRankEntries.roundId, roundId),
+        eq(applications.roundId, roundId),
+      ),
+    )
+    .orderBy(asc(committeeRankEntries.rankPosition));
+}
+
 export async function findRoundAllocationResults(roundId: string) {
   return db
     .select({
@@ -277,7 +298,28 @@ export async function findExistingRoundAllocationHousingUnitIds(roundId: string)
   return rows.map((row) => row.housingUnitId);
 }
 
-export async function clearRoundAllocationResults(roundId: string) {
+export async function findExistingRoundAllocationHousingUnitIdsByStatus(
+  roundId: string,
+  status: 'PRELIMINARY' | 'PUBLISHED',
+) {
+  const rows = await db
+    .select({
+      housingUnitId: allocationResults.housingUnitId,
+    })
+    .from(allocationResults)
+    .where(and(eq(allocationResults.roundId, roundId), eq(allocationResults.status, status)));
+
+  return rows.map((row) => row.housingUnitId);
+}
+
+export async function clearRoundAllocationResults(roundId: string, status?: 'PRELIMINARY' | 'PUBLISHED') {
+  if (status) {
+    await db
+      .delete(allocationResults)
+      .where(and(eq(allocationResults.roundId, roundId), eq(allocationResults.status, status)));
+    return;
+  }
+
   await db.delete(allocationResults).where(eq(allocationResults.roundId, roundId));
 }
 
@@ -309,6 +351,7 @@ export async function insertAllocationResults(
     housingUnitId: string;
     allocatedByUserId: string;
   }>,
+  status: 'PRELIMINARY' | 'PUBLISHED' = 'PRELIMINARY',
 ) {
   if (rows.length === 0) {
     return [];
@@ -322,7 +365,7 @@ export async function insertAllocationResults(
         applicationId: row.applicationId,
         housingUnitId: row.housingUnitId,
         allocatedByUserId: row.allocatedByUserId,
-        status: 'PRELIMINARY' as const,
+        status,
       })),
     )
     .returning({

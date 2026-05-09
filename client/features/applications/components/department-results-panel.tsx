@@ -57,7 +57,10 @@ export function DepartmentResultsPanel() {
                   House
                 </th>
                 <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
-                  Status
+                  Result
+                </th>
+                <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
+                  Final Score
                 </th>
                 <th className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
                   Allocated At
@@ -80,8 +83,13 @@ export function DepartmentResultsPanel() {
                     {row.housingBuildingName ?? "-"} / Block {row.housingBlockNumber ?? "-"} /
                     Room {row.housingRoomNumber ?? "-"}
                   </td>
-                  <td className="px-4 py-4 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
-                    {row.allocationStatus}
+                  <td className="px-4 py-4">
+                    <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest border border-[var(--border)] text-[var(--color-primary)] bg-[var(--surface-muted)]">
+                      {row.allocationStatus}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-sm font-semibold text-[var(--color-primary)]">
+                    {row.lecturerFinalScore ?? "-"}
                   </td>
                   <td className="px-4 py-4 text-sm text-muted">
                     {new Date(row.allocatedAt).toLocaleString()}

@@ -211,6 +211,7 @@ export async function findDepartmentAllocationResults(department: string) {
       lecturerName: users.name,
       lecturerEmail: users.email,
       lecturerDepartment: users.department,
+      lecturerFinalScore: scoreSnapshots.finalScore,
       housingUnitId: allocationResults.housingUnitId,
       housingBuildingName: housingUnits.buildingName,
       housingBlockNumber: housingUnits.blockNumber,
@@ -223,6 +224,7 @@ export async function findDepartmentAllocationResults(department: string) {
     .leftJoin(users, eq(applications.userId, users.id))
     .leftJoin(applicationRounds, eq(allocationResults.roundId, applicationRounds.id))
     .leftJoin(housingUnits, eq(allocationResults.housingUnitId, housingUnits.id))
+    .leftJoin(scoreSnapshots, eq(applications.scoreSnapshotId, scoreSnapshots.id))
     .where(eq(users.department, department))
     .orderBy(desc(allocationResults.allocatedAt), users.name);
 }

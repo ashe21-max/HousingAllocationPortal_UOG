@@ -77,6 +77,7 @@ export type DepartmentAllocationResultRow = {
   lecturerName: string | null;
   lecturerEmail: string | null;
   lecturerDepartment: string | null;
+  lecturerFinalScore: number | null;
   housingUnitId: string;
   housingBuildingName: string | null;
   housingBlockNumber: string | null;
@@ -95,6 +96,12 @@ export async function saveApplicationDraft(payload: SaveApplicationDraftPayload)
 export async function submitApplication(applicationId: string) {
   return apiRequest<ApplicationRow>(`/applications/${applicationId}/submit`, {
     method: "POST",
+  });
+}
+
+export async function getMyApplicationDetails(applicationId: string) {
+  return apiRequest<any>(`/applications/${applicationId}/details`, {
+    method: "GET",
   });
 }
 

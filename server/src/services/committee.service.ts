@@ -5,6 +5,7 @@ import type {
   CommitteeReviewApplicationDto,
 } from '../dtos/committee.dto.js';
 import { AppError } from '../errorHandler/app-error.js';
+import { runOfficerRoundAllocation } from './officer-allocation.service.js';
 import {
   findCommitteeApplicationById,
   findCommitteeApplications,
@@ -230,7 +231,7 @@ export async function listRoundRanking(roundIdInput: string) {
   return findCommitteeRankEntriesByRound(roundId);
 }
 
-export async function submitRoundPreliminary(roundIdInput: string) {
+export async function submitRoundPreliminary(roundIdInput: string, committeeUserId: string) {
   const roundId = validateCommitteeRoundId(roundIdInput);
   const entries = await findCommitteeRankEntriesByRound(roundId);
 
@@ -250,10 +251,14 @@ export async function submitRoundPreliminary(roundIdInput: string) {
     throw new AppError('Round not found', 404, 'ROUND_NOT_FOUND');
   }
 
+  // Generate PRELIMINARY allocation results immediately so lecturers can see them.
+  // Uses the current committee rank entries (does not reserve houses).
+  await runOfficerRoundAllocation(roundId, committeeUserId);
+
   return updatedRound;
 }
 
-export async function submitRoundFinal(roundIdInput: string) {
+export async function submitRoundFinal(roundIdInput: string, committeeUserId: string) {
   const roundId = validateCommitteeRoundId(roundIdInput);
   const entries = await findCommitteeRankEntriesByRound(roundId);
 
@@ -274,6 +279,9 @@ export async function submitRoundFinal(roundIdInput: string) {
   if (!updatedRound) {
     throw new AppError('Round not found', 404, 'ROUND_NOT_FOUND');
   }
+
+  // Generate PUBLISHED allocation results immediately so lecturers can see final results.
+  await runOfficerRoundAllocation(roundId, committeeUserId);
 
   return updatedRound;
 }

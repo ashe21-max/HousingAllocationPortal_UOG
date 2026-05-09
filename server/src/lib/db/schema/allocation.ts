@@ -35,13 +35,16 @@ export const allocationResults = pgTable(
       .defaultNow(),
   },
   (table) => [
+    // Include status so PRELIMINARY and PUBLISHED can coexist for the same round.
     uniqueIndex('allocation_results_round_application_unique').on(
       table.roundId,
       table.applicationId,
+      table.status,
     ),
     uniqueIndex('allocation_results_round_housing_unit_unique').on(
       table.roundId,
       table.housingUnitId,
+      table.status,
     ),
     index('allocation_results_round_idx').on(table.roundId),
     index('allocation_results_housing_unit_idx').on(table.housingUnitId),

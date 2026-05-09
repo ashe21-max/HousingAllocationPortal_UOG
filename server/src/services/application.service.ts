@@ -1,4 +1,5 @@
 import type { SaveApplicationDraftDto } from '../dtos/application.dto.js';
+import { eq } from 'drizzle-orm';
 import { AppError } from '../errorHandler/app-error.js';
 import { findUserById } from '../repository/user.repository.js';
 import { findHousingUnitById, findHousingUnits } from '../repository/housing.repository.js';
@@ -19,6 +20,10 @@ import {
   updateApplicationDraft,
   deleteApplicationByIdAndUser,
 } from '../repository/application.repository.js';
+import {
+  findLecturerDocumentsByApplicationId,
+  findLecturerDocumentsByUserId,
+} from '../repository/document.repository.js';
 import { canTransitionApplicationStatus } from '../utils/application-status.js';
 import {
   validateApplicationId,
@@ -254,30 +259,10 @@ export async function getApplicationFormOptions() {
     findHousingUnits({ status: 'Available' }),
   ]);
 
-  // If no rounds found, create default round
-  if (!rounds || rounds.length === 0) {
-    const { db } = await import('../lib/db/index.js');
-    const { applicationRounds } = await import('../lib/db/schema/application.js');
-    
-    const [newRound] = await db
-      .insert(applicationRounds)
-      .values({
-        id: '2876a748-2b8a-48c8-ab57-ea8aa14a2769',
-        name: '2024 Housing Allocation Round',
-        status: 'OPEN',
-        startsAt: new Date('2026-04-22T20:43:40.700Z'),
-        endsAt: new Date('2026-07-22T20:43:40.700Z'),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        createdByUserId: 'system',
-      })
-      .returning();
-    
-    console.log('Created default round:', newRound);
-    rounds.push(newRound);
-  }
-
-  return { rounds, availableHouses };
+  return {
+    rounds: rounds ?? [],
+    availableHouses: availableHouses ?? [],
+  };
 }
 
 export async function getMyDepartmentAllocationResults(userId: string) {
@@ -297,4 +282,94 @@ export async function getMyDepartmentAllocationResults(userId: string) {
   }
 
   return findDepartmentAllocationResults(department);
+}
+
+export async function getMyApplicationDetails(userId: string, applicationIdInput: string) {
+  const applicationId = validateApplicationId(applicationIdInput);
+  const application = await findApplicationByIdAndUser(applicationId, userId);
+
+  if (!application) {
+    throw new AppError('Application not found', 404, 'APPLICATION_NOT_FOUND');
+  }
+
+  // Fetch documents
+  let documents = await findLecturerDocumentsByApplicationId(application.id);
+  
+  // Fallback: if no documents found by applicationId, try by userId
+  if (documents.length === 0) {
+    documents = await findLecturerDocumentsByUserId(application.userId);
+  }
+
+  // Extract score from score snapshot if available, otherwise from notes
+  let scoreData = {
+    scoreBreakdown: null as any,
+    scoreBaseTotal: null,
+    scoreBonusTotal: null,
+    scoreFinal: null,
+  };
+
+  if (application.scoreSnapshotId) {
+    // Score snapshot is available, we can fetch it
+    try {
+      const { db } = await import('../lib/db/index.js');
+      const { scoreSnapshots } = await import('../lib/db/schema/scoring.js');
+      
+      const snapshot = await db
+        .select()
+        .from(scoreSnapshots)
+        .where(eq(scoreSnapshots.id, application.scoreSnapshotId))
+        .limit(1)
+        .then((results: any) => results[0]);
+
+      if (snapshot && snapshot.breakdown) {
+        const breakdown = typeof snapshot.breakdown === 'string' 
+          ? JSON.parse(snapshot.breakdown) 
+          : snapshot.breakdown;
+        
+        scoreData = {
+          scoreBreakdown: breakdown,
+          scoreBaseTotal: snapshot.baseTotal,
+          scoreBonusTotal: snapshot.bonusTotal,
+          scoreFinal: snapshot.finalScore,
+        };
+      }
+    } catch (e) {
+      console.log('Could not fetch score snapshot:', e);
+    }
+  }
+
+  // Fallback: Extract score from notes if score snapshot is not available
+  if (!scoreData.scoreFinal && application.notes) {
+    try {
+      const parsedNotes = JSON.parse(application.notes);
+      if (parsedNotes.score) {
+        scoreData = {
+          scoreBreakdown: [
+            { criteria: 'Educational Title', weightLabel: '40%', yourPoints: parsedNotes.educationalTitle ? 100 : 0, score: parsedNotes.score.educationalTitle || 0, kind: 'base' },
+            { criteria: 'Educational Level', weightLabel: '5%', yourPoints: parsedNotes.educationalLevel ? 100 : 0, score: parsedNotes.score.educationalLevel || 0, kind: 'base' },
+            { criteria: 'Service Years', weightLabel: '35%', yourPoints: parsedNotes.startDateAtUog ? 100 : 0, score: parsedNotes.score.serviceYears || 0, kind: 'base' },
+            { criteria: 'Responsibility', weightLabel: '10%', yourPoints: parsedNotes.responsibility ? 100 : 0, score: parsedNotes.score.responsibility || 0, kind: 'base' },
+            { criteria: 'Family Status', weightLabel: '10%', yourPoints: parsedNotes.familyStatus ? 100 : 0, score: parsedNotes.score.familyStatus || 0, kind: 'base' },
+            { criteria: 'Base Total', weightLabel: '100%', yourPoints: null, score: parsedNotes.score.baseTotal || 0, kind: 'total' },
+            { criteria: 'Female Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.isFemale ? 5 : null, score: parsedNotes.score.femaleBonus || 0, kind: 'bonus' },
+            { criteria: 'Disability Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.isDisabled ? 5 : null, score: parsedNotes.score.disabilityBonus || 0, kind: 'bonus' },
+            { criteria: 'Chronic Illness Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.hasChronicIllness ? 3 : null, score: parsedNotes.score.chronicIllnessBonus || 0, kind: 'bonus' },
+            { criteria: 'Spouse Bonus', weightLabel: 'Bonus', yourPoints: parsedNotes.hasSpouseAtUog ? 5 : null, score: parsedNotes.score.spouseBonus || 0, kind: 'bonus' },
+            { criteria: 'FINAL SCORE', weightLabel: '', yourPoints: null, score: parsedNotes.score.final || 0, kind: 'total' },
+          ],
+          scoreBaseTotal: parsedNotes.score.baseTotal || 0,
+          scoreBonusTotal: (parsedNotes.score.femaleBonus || 0) + (parsedNotes.score.disabilityBonus || 0) + (parsedNotes.score.chronicIllnessBonus || 0) + (parsedNotes.score.spouseBonus || 0),
+          scoreFinal: parsedNotes.score.final || 0,
+        };
+      }
+    } catch (e) {
+      console.log('Could not parse score from application notes:', e);
+    }
+  }
+
+  return {
+    ...application,
+    ...scoreData,
+    documents,
+  };
 }

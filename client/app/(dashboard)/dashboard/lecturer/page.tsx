@@ -13,141 +13,78 @@ export default function LecturerDashboardPage() {
       <DashboardShell
         title="Lecturer Dashboard"
         description="Manage your housing applications and documents"
+        authStyleMainBackdrop
       >
-        {/* Content */}
-        <div className="p-6 dashboard-bg">
-          <LecturerAnnouncementsPanel />
+        <LecturerAnnouncementsPanel />
 
-          <p className="text-[var(--foreground-secondary)]">
-            Lecturer dashboard content here.
-          </p>
+        <p className="text-white/85 mb-8">
+          Welcome to your housing dashboard. Manage your applications and stay updated.
+        </p>
 
-          {/* Lecturer Core Functions */}
-          <div className="core-functions bg-gradient-to-br from-[var(--color-blue)]/10 via-[var(--color-green)]/10 to-[var(--color-yellow)]/10 backdrop-blur-sm">
-            <div className="hover:bg-gradient-to-r hover:from-[var(--color-blue)]/20 hover:to-[var(--color-green)]/20 transition duration-300">📊 Overview →</div>
-            <div className="hover:bg-gradient-to-r hover:from-[var(--color-green)]/20 hover:to-[var(--color-yellow)]/20 transition duration-300">📝 New Application →</div>
-            <div className="hover:bg-gradient-to-r hover:from-[var(--color-yellow)]/20 hover:to-[var(--color-blue)]/20 transition duration-300">📂 My Applications →</div>
-            <div className="hover:bg-gradient-to-r hover:from-[var(--color-blue)]/20 hover:to-[var(--color-green)]/20 transition duration-300">📈 View Results →</div>
-            <div className="hover:bg-gradient-to-r hover:from-[var(--color-green)]/20 hover:to-[var(--color-yellow)]/20 transition duration-300">⚠️ File Complaint →</div>
-            <div className="hover:bg-gradient-to-r hover:from-[var(--color-yellow)]/20 hover:to-[var(--color-blue)]/20 transition duration-300">⚙️ Settings →</div>
-            <div className="hover:bg-gradient-to-r hover:from-[var(--color-blue)]/20 hover:to-[var(--color-green)]/20 transition duration-300">💬 Support</div>
-          </div>
+        {/* Lecturer Core Functions */}
+        <div className="core-functions">
+          <div>📊 Overview →</div>
+          <div>📝 New Application →</div>
+          <div>📂 My Applications →</div>
+          <div>📈 View Results →</div>
+          <div>⚠️ File Complaint →</div>
+          <div>⚙️ Settings →</div>
+          <div>💬 Support</div>
         </div>
+
+        <style jsx global>{`
+          .core-functions {
+            margin-top: 40px;
+            padding: 32px;
+            border-radius: 24px;
+            background: linear-gradient(
+              135deg,
+              rgba(255, 255, 255, 0.05) 0%,
+              rgba(255, 255, 255, 0.02) 100%
+            );
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(16px) brightness(1.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 0.6s ease-out;
+          }
+
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .core-functions div {
+            padding: 16px 20px;
+            margin: 12px 0;
+            border-radius: 14px;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            border: 1px solid transparent;
+            color: white;
+          }
+
+          .core-functions div:hover {
+            background: linear-gradient(
+              135deg,
+              rgba(59, 130, 246, 0.15),
+              rgba(34, 197, 94, 0.15)
+            );
+            transform: translateX(12px) scale(1.02);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+            color: var(--color-blue);
+          }
+        `}</style>
       </DashboardShell>
-
-      {/* SAME GLOBAL CSS SYSTEM */}
-      <style jsx global>{`
-        /* FULL PAGE BACKGROUND */
-        body {
-          background: linear-gradient(
-            to bottom right,
-            var(--surface),
-            var(--surface-secondary),
-            var(--surface-tertiary)
-          );
-          color: var(--foreground);
-        }
-
-        /* TITLE STYLE (auto applied to DashboardShell h1) */
-        h1 {
-          font-weight: bold;
-          font-size: 2rem;
-          background: linear-gradient(
-            to right,
-            var(--color-blue),
-            var(--color-green),
-            var(--color-yellow)
-          );
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: slideGlow 4s ease-in-out infinite;
-        }
-
-        /* ANIMATION */
-        @keyframes slideGlow {
-          0% {
-            transform: translateX(120px);
-            opacity: 0;
-          }
-          40% {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          60% {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(-120px);
-            opacity: 0;
-          }
-        }
-
-        /* CONTENT AREA */
-        .dashboard-bg {
-          position: relative;
-          min-height: 100vh;
-        }
-
-        /* CORE FUNCTION PANEL */
-        .core-functions {
-          margin-top: 30px;
-          padding: 20px;
-          border-radius: 16px;
-          background: linear-gradient(
-            to bottom right,
-            var(--surface),
-            var(--surface-secondary)
-          );
-          border: 1px solid var(--border);
-          backdrop-filter: blur(10px);
-        }
-
-        /* ITEMS */
-        .core-functions div {
-          padding: 10px 12px;
-          margin: 6px 0;
-          border-radius: 10px;
-          transition: all 0.3s ease;
-          cursor: pointer;
-        }
-
-        /* HOVER EFFECT */
-        .core-functions div:hover {
-          background: rgba(0, 150, 255, 0.08);
-          transform: translateX(8px);
-          color: var(--color-blue);
-        }
-
-        /* BACKGROUND GLOW EFFECTS */
-        body::before {
-          content: "";
-          position: fixed;
-          top: 10%;
-          left: 10%;
-          width: 300px;
-          height: 300px;
-          background: var(--color-blue);
-          opacity: 0.08;
-          filter: blur(80px);
-          border-radius: 50%;
-          z-index: -1;
-        }
-
-        body::after {
-          content: "";
-          position: fixed;
-          bottom: 10%;
-          right: 10%;
-          width: 250px;
-          height: 250px;
-          background: var(--color-green);
-          opacity: 0.08;
-          filter: blur(80px);
-          border-radius: 50%;
-          z-index: -1;
-        }
-      `}</style>
     </DashboardGate>
   );
 }

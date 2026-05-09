@@ -171,7 +171,7 @@ export async function submitRoundPreliminaryController(
       throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
     }
 
-    const updatedRound = await submitRoundPreliminary(req.params.roundId);
+    const updatedRound = await submitRoundPreliminary(req.params.roundId, req.user.userId);
     res.status(200).json(updatedRound);
   } catch (error) {
     next(error);
@@ -188,7 +188,7 @@ export async function submitRoundFinalController(
       throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
     }
 
-    const updatedRound = await submitRoundFinal(req.params.roundId);
+    const updatedRound = await submitRoundFinal(req.params.roundId, req.user.userId);
     res.status(200).json(updatedRound);
   } catch (error) {
     next(error);

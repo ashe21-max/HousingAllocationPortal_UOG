@@ -9,6 +9,7 @@ export default function LecturerApplicationPage() {
       <DashboardShell
         title="Housing Application"
         description="Prepare your score, create a draft application, and submit when the round is open."
+        authStyleMainBackdrop
       >
         <LecturerAnnouncementsPanel />
         <NewApplicationPanel />

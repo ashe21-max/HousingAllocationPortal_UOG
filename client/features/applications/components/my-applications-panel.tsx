@@ -7,22 +7,15 @@ import { CheckCircle, Clock, FileText, Send, Calendar, AlertCircle, Eye, User, G
 
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
-import { ApplicationFormData } from './housing-application-form';
-import { ScoreBreakdown } from '@/lib/housing-scoring';
 import {
   getMyDocuments,
   openMyDocument,
   downloadMyDocument,
-  type LecturerDocumentRow,
 } from "@/lib/api/documents";
-
-interface ParsedApplicationData extends ApplicationFormData {
-  score?: ScoreBreakdown;
-  submittedAt?: string;
-}
 import {
   getMyApplications,
   submitApplication,
+  getMyApplicationDetails,
   type MyApplicationRow,
 } from "@/lib/api/applications";
 
@@ -93,35 +86,12 @@ function getStatusIcon(status: string) {
 // Component to display detailed application form data from database
 function ApplicationDetails({ application }: { application: MyApplicationRow }) {
   const [showDetails, setShowDetails] = React.useState(false);
-  const [formData, setFormData] = React.useState<ParsedApplicationData | null>(null);
 
-  React.useEffect(() => {
-    console.log('ApplicationDetails - application.notes:', application.notes);
-    console.log('ApplicationDetails - application.status:', application.status);
-    if (application.notes) {
-      try {
-        const parsedData = JSON.parse(application.notes);
-        console.log('ApplicationDetails - parsedData:', parsedData);
-        setFormData(parsedData);
-      } catch (e) {
-        console.error("Could not parse application notes:", e);
-        console.error("Notes content:", application.notes);
-      }
-    } else {
-      console.log('ApplicationDetails - notes is null or empty');
-    }
-  }, [application.notes]);
-
-  const documentsQuery = useQuery({
-    queryKey: ["my-application-documents", application.id],
-    queryFn: getMyDocuments,
+  const detailsQuery = useQuery({
+    queryKey: ["my-application-details", application.id],
+    queryFn: () => getMyApplicationDetails(application.id),
     enabled: showDetails,
   });
-
-  const applicationDocuments = React.useMemo(() => {
-    if (!documentsQuery.data) return [];
-    return documentsQuery.data.filter((doc: LecturerDocumentRow) => doc.applicationId === application.id);
-  }, [documentsQuery.data, application.id]);
 
   const openMutation = useMutation({
     mutationFn: (documentId: string) => openMyDocument(documentId),
@@ -152,7 +122,7 @@ function ApplicationDetails({ application }: { application: MyApplicationRow }) 
 
       {showDetails && (
         <>
-          {!formData ? (
+          {detailsQuery.isLoading ? (
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden w-full">
               <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 w-full">
                 <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -161,8 +131,19 @@ function ApplicationDetails({ application }: { application: MyApplicationRow }) 
                 </h4>
               </div>
               <div className="p-6">
-                <p className="text-sm text-gray-600">No detailed form data available</p>
-                <p className="text-xs text-gray-400 mt-2">Status: {application.status}</p>
+                <p className="text-sm text-gray-600">Loading details...</p>
+              </div>
+            </div>
+          ) : detailsQuery.isError || !detailsQuery.data ? (
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden w-full">
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 w-full">
+                <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-gray-600" />
+                  Complete Application Form Data
+                </h4>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-gray-600">Could not load application details</p>
               </div>
             </div>
           ) : (
@@ -179,256 +160,249 @@ function ApplicationDetails({ application }: { application: MyApplicationRow }) 
               <div className="p-2 space-y-3 w-full">
 
                 {/* PERSONAL INFORMATION */}
-            <div className="w-full">
-              <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                <User className="w-4 h-4 text-gray-600" />
-                Personal Information
-              </h5>
+                <div className="w-full">
+                  <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-600" />
+                    Personal Information
+                  </h5>
 
-              <div className="bg-gray-50 rounded-lg overflow-hidden w-full">
-                <table className="w-full">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information Type</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Points</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Full Name</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.fullName || "-"}</td>
-                      <td className="px-4 py-3 text-gray-600">-</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Staff ID</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.staffId || "-"}</td>
-                      <td className="px-4 py-3 text-gray-600">-</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Email</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.email || "-"}</td>
-                      <td className="px-4 py-3 text-gray-600">-</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Phone Number</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.phoneNumber || "-"}</td>
-                      <td className="px-4 py-3 text-gray-600">-</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* ACADEMIC INFORMATION */}
-            <div className="w-full">
-              <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-gray-600" />
-                Academic Information
-              </h5>
-
-              <div className="bg-gray-50 rounded-lg overflow-hidden w-full">
-                <table className="w-full">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information Type</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Points</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">College</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.college || "-"}</td>
-                      <td className="px-4 py-3 text-gray-600">-</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">College / Unit</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.department || "-"}</td>
-                      <td className="px-4 py-3 text-gray-600">-</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Educational Title</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.educationalTitle || "-"}</td>
-                      <td className="px-4 py-3 text-green-600 font-semibold">{formData.score?.educationalTitle || 0}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Educational Level</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.educationalLevel || "-"}</td>
-                      <td className="px-4 py-3 text-green-600 font-semibold">{formData.score?.educationalLevel || 0}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Start Date at UOG</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.startDateAtUog || "-"}</td>
-                      <td className="px-4 py-3 text-green-600 font-semibold">{formData.score?.serviceYears || 0}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Responsibility</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.responsibility || "-"}</td>
-                      <td className="px-4 py-3 text-green-600 font-semibold">{formData.score?.responsibility || 0}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Family Status</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.familyStatus || "-"}</td>
-                      <td className="px-4 py-3 text-green-600 font-semibold">{formData.score?.familyStatus || 0}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* ADDITIONAL INFORMATION */}
-            <div className="w-full">
-              <h5 className="text-md font-semibold text-gray-800 mb-2">Additional Information</h5>
-
-              <div className="bg-gray-50 rounded-lg overflow-hidden w-full">
-                <table className="w-full">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information Type</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Points</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Spouse Name</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.spouseName || "-"}</td>
-                      <td className="px-4 py-3 text-gray-600">-</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Spouse Staff ID</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.spouseStaffId || "-"}</td>
-                      <td className="px-4 py-3 text-gray-600">-</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Number of Dependents</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.numberOfDependents || "-"}</td>
-                      <td className="px-4 py-3 text-gray-600">-</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Female</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.isFemale ? "Yes" : "No"}</td>
-                      <td className="px-4 py-3 text-green-600 font-semibold">{formData.score?.femaleBonus || 0}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Disabled</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.isDisabled ? "Yes" : "No"}</td>
-                      <td className="px-4 py-3 text-green-600 font-semibold">{formData.score?.disabilityBonus || 0}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Has Chronic Illness</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.hasChronicIllness ? "Yes" : "No"}</td>
-                      <td className="px-4 py-3 text-green-600 font-semibold">{formData.score?.chronicIllnessBonus || 0}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-3 font-medium text-gray-700">Spouse at UOG</td>
-                      <td className="px-4 py-3 text-gray-900">{formData.hasSpouseAtUog ? "Yes" : "No"}</td>
-                      <td className="px-4 py-3 text-green-600 font-semibold">{formData.score?.spouseBonus || 0}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* SCORE INFORMATION */}
-            {formData.score && (
-              <div className="w-full">
-                <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <Award className="w-4 h-4 text-gray-600" />
-                  Score Breakdown
-                </h5>
-
-                <div className="bg-blue-50 rounded-lg overflow-hidden w-full border border-blue-200">
-                  <table className="w-full">
-                    <thead className="bg-blue-100">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-blue-700 w-1/2">Score Type</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-blue-700 w-1/2">Points</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-blue-200">
-                      <tr>
-                        <td className="px-4 py-3 font-medium text-blue-900">Base Score</td>
-                        <td className="px-4 py-3 text-xl font-bold text-blue-900">{formData.score.baseTotal || 0}</td>
-                      </tr>
-                      <tr>
-                        <td className="px-4 py-3 font-medium text-blue-900">Bonus Score</td>
-                        <td className="px-4 py-3 text-xl font-bold text-green-600">
-                          +{((formData.score.femaleBonus || 0) + 
-                            (formData.score.disabilityBonus || 0) + 
-                            (formData.score.chronicIllnessBonus || 0) + 
-                            (formData.score.spouseBonus || 0)).toFixed(2)}
-                        </td>
-                      </tr>
-                      <tr className="bg-blue-100">
-                        <td className="px-4 py-3 font-bold text-blue-900">Final Score</td>
-                        <td className="px-4 py-3 text-2xl font-bold text-blue-900">{formData.score.final || 0}/100</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* DOCUMENTS */}
-            <div className="w-full">
-              <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-gray-600" />
-                Uploaded Documents
-              </h5>
-
-              {documentsQuery.isLoading ? (
-                <p className="text-sm text-gray-600">Loading documents...</p>
-              ) : applicationDocuments.length === 0 ? (
-                <p className="text-sm text-gray-600">No documents uploaded for this application.</p>
-              ) : (
-                <div className="bg-gray-50 rounded-lg overflow-hidden w-full border border-gray-200">
-                  <table className="w-full">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">File Name</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Purpose</th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {applicationDocuments.map((doc: LecturerDocumentRow) => (
-                        <tr key={doc.id}>
-                          <td className="px-4 py-3 font-medium text-gray-700">{doc.originalFileName}</td>
-                          <td className="px-4 py-3 text-gray-900">{doc.purpose}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => openMutation.mutate(doc.id)}
-                                busy={openMutation.isPending && openMutation.variables === doc.id}
-                              >
-                                <FolderOpen className="w-4 h-4 mr-1" />
-                                Open
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="primary"
-                                onClick={() => downloadMutation.mutate({ documentId: doc.id, fileName: doc.originalFileName })}
-                                busy={downloadMutation.isPending && downloadMutation.variables?.documentId === doc.id}
-                              >
-                                <Download className="w-4 h-4 mr-1" />
-                                Download
-                              </Button>
-                            </div>
-                          </td>
+                  <div className="bg-gray-50 rounded-lg overflow-hidden w-full">
+                    <table className="w-full">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information Type</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Points</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Full Name</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Staff ID</td>
+                          <td className="px-4 py-3 text-gray-900">{detailsQuery.data.userId}</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Email</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Phone Number</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              )}
-            </div>
 
-          </div>
-        </div>
+                {/* ACADEMIC INFORMATION */}
+                <div className="w-full">
+                  <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-gray-600" />
+                    Academic Information
+                  </h5>
+
+                  <div className="bg-gray-50 rounded-lg overflow-hidden w-full">
+                    <table className="w-full">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information Type</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Points</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">College</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">College / Unit</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Educational Title</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-green-600 font-semibold">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Educational Level</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-green-600 font-semibold">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Start Date at UOG</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-green-600 font-semibold">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Responsibility</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-green-600 font-semibold">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Family Status</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-green-600 font-semibold">-</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* ADDITIONAL INFORMATION */}
+                <div className="w-full">
+                  <h5 className="text-md font-semibold text-gray-800 mb-2">Additional Information</h5>
+
+                  <div className="bg-gray-50 rounded-lg overflow-hidden w-full">
+                    <table className="w-full">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information Type</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Information</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Points</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Spouse Name</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Spouse Staff ID</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Number of Dependents</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Female</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Disabled</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Has Chronic Illness</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-3 font-medium text-gray-700">Spouse at UOG</td>
+                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-600">-</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* SCORE INFORMATION */}
+                {detailsQuery.data?.scoreFinal !== null && (
+                  <div className="w-full">
+                    <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-gray-600" />
+                      Score Breakdown
+                    </h5>
+
+                    <div className="bg-blue-50 rounded-lg overflow-hidden w-full border border-blue-200">
+                      <table className="w-full">
+                        <thead className="bg-blue-100">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-blue-700 w-1/2">Score Type</th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-blue-700 w-1/2">Points</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-blue-200">
+                          <tr>
+                            <td className="px-4 py-3 font-medium text-blue-900">Base Score</td>
+                            <td className="px-4 py-3 text-xl font-bold text-blue-900">{detailsQuery.data.scoreBaseTotal ?? 0}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-3 font-medium text-blue-900">Bonus Score</td>
+                            <td className="px-4 py-3 text-xl font-bold text-green-600">+{detailsQuery.data.scoreBonusTotal ?? 0}</td>
+                          </tr>
+                          <tr className="bg-blue-100">
+                            <td className="px-4 py-3 font-bold text-blue-900">Final Score</td>
+                            <td className="px-4 py-3 text-2xl font-bold text-blue-900">{detailsQuery.data.scoreFinal ?? 0}/100</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* DOCUMENTS */}
+                <div className="w-full">
+                  <h5 className="text-md font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-600" />
+                    Uploaded Documents
+                  </h5>
+
+                  {detailsQuery.data?.documents && detailsQuery.data.documents.length === 0 ? (
+                    <p className="text-sm text-gray-600">No documents uploaded for this application.</p>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg overflow-hidden w-full border border-gray-200">
+                      <table className="w-full">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">File Name</th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Purpose</th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 w-1/3">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {detailsQuery.data?.documents?.map((doc: any) => (
+                            <tr key={doc.id}>
+                              <td className="px-4 py-3 font-medium text-gray-700">{doc.originalFileName}</td>
+                              <td className="px-4 py-3 text-gray-900">{doc.purpose}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => openMutation.mutate(doc.id)}
+                                    busy={openMutation.isPending && openMutation.variables === doc.id}
+                                  >
+                                    <FolderOpen className="w-4 h-4 mr-1" />
+                                    Open
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="primary"
+                                    onClick={() => downloadMutation.mutate({ documentId: doc.id, fileName: doc.originalFileName })}
+                                    busy={downloadMutation.isPending && downloadMutation.variables?.documentId === doc.id}
+                                  >
+                                    <Download className="w-4 h-4 mr-1" />
+                                    Download
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
           )}
         </>
       )}

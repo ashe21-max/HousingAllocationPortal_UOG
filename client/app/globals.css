@@ -385,7 +385,6 @@ h6, .h6 {
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.95);
   box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(12px);
   border-radius: var(--radius-xl);
   transition: all var(--transition-normal);
   position: relative;

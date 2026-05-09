@@ -4,6 +4,7 @@ import {
   getApplicationOptionsController,
   getMyDepartmentResultsController,
   getMyApplicationsController,
+  getMyApplicationDetailsController,
   saveApplicationDraftController,
   submitApplicationController,
   deleteApplicationController,
@@ -18,6 +19,7 @@ applicationRouter.post('/draft', authenticate, requireRole('LECTURER'), saveAppl
 applicationRouter.post('/:id/submit', authenticate, requireRole('LECTURER'), submitApplicationController);
 applicationRouter.delete('/:id', authenticate, requireRole('LECTURER'), deleteApplicationController);
 applicationRouter.get('/me', authenticate, requireRole('LECTURER'), getMyApplicationsController);
+applicationRouter.get('/:id/details', authenticate, requireRole('LECTURER'), getMyApplicationDetailsController);
 applicationRouter.get('/options', getApplicationOptionsController); // No auth required for options
 applicationRouter.get('/results/department', authenticate, requireRole('LECTURER'), getMyDepartmentResultsController);
 

@@ -74,6 +74,26 @@ export type CommitteeApplicationDetails = {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  formData: {
+    fullName?: string;
+    staffId?: string;
+    email?: string;
+    phoneNumber?: string;
+    college?: string;
+    department?: string;
+    educationalTitle?: string;
+    educationalLevel?: string;
+    startDateAtUog?: string;
+    responsibility?: string;
+    familyStatus?: string;
+    spouseName?: string;
+    spouseStaffId?: string;
+    numberOfDependents?: string;
+    hasSpouseAtUog?: boolean;
+    isFemale?: boolean;
+    isDisabled?: boolean;
+    hasChronicIllness?: boolean;
+  } | null;
   scoreBreakdown: Array<{
     criteria: string;
     weightLabel: string;

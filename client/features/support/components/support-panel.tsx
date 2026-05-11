@@ -613,7 +613,7 @@ export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <Badge variant={report.status === 'resolved' ? 'success' : 'warning'}>
+                                <Badge variant={report.status === 'RESOLVED' ? 'success' : 'warning'}>
                                   {report.status}
                                 </Badge>
                                 <span className="text-sm text-[var(--foreground-tertiary)]">
@@ -629,13 +629,13 @@ export function SupportPanel({ role = 'LECTURER' }: SupportPanelProps) {
                               </p>
                             </div>
                             <div className="flex items-center gap-2 ml-4">
-                              {report.status !== 'resolved' && (
+                              {report.status !== 'RESOLVED' && (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => updateStatusMutation.mutate({
                                     id: report.id,
-                                    status: 'resolved'
+                                    status: 'RESOLVED'
                                   })}
                                   disabled={updateStatusMutation.isPending}
                                 >

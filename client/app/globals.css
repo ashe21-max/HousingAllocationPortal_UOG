@@ -41,6 +41,10 @@
   --color-primary-light: #3b82f6;
   --color-primary-dark: #1e40af;
   --color-primary-rgb: 30, 58, 138;
+  --color-primary-foreground: #ffffff;
+  --color-accent: var(--color-primary-light);
+  --color-accent-soft: rgba(var(--color-blue-rgb), 0.12);
+  --color-accent-foreground: #ffffff;
   
   /* Accent Colors - RGB Spectrum */
   --color-red: #ef4444;
@@ -81,6 +85,20 @@
   --surface-muted: #f8fafc;
   --border: #e2e8f0;
   --border-light: #f1f5f9;
+
+  /* Compatibility tokens for shared UI primitives */
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--foreground);
+  --destructive: var(--color-danger);
+  --destructive-foreground: #ffffff;
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--foreground-tertiary);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-foreground);
+  --input: var(--border);
+  --ring: var(--color-blue);
 }
 
 /* Dark Theme Styles */
@@ -96,6 +114,13 @@
   --surface-muted: #0f172a;
   --border: #334155;
   --border-light: #475569;
+  --color-accent-soft: rgba(var(--color-blue-rgb), 0.18);
+  --secondary: var(--surface-elevated);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--foreground-secondary);
+  --input: var(--border);
+  --ring: var(--color-blue);
 }
 
 .dark-theme body {
@@ -247,6 +272,37 @@ input,
 select,
 textarea {
   transition: all var(--transition-normal) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input,
+select,
+textarea {
+  color: var(--foreground) !important;
+  caret-color: var(--foreground) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--foreground-tertiary);
+  opacity: 1;
+}
+
+select option {
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 /* === FOCUS STYLES === */
@@ -863,5 +919,12 @@ h6, .h6 {
     --surface-muted: #1e293b;
     --border: #334155;
     --border-light: #475569;
+    --color-accent-soft: rgba(var(--color-blue-rgb), 0.18);
+    --secondary: var(--surface-elevated);
+    --secondary-foreground: var(--foreground);
+    --muted: var(--surface-muted);
+    --muted-foreground: var(--foreground-secondary);
+    --input: var(--border);
+    --ring: var(--color-blue);
   }
 }

@@ -31,6 +31,94 @@ import {
   validateCommitteeReviewApplicationInput,
 } from '../validators/committee.validator.js';
 
+type ParsedCommitteeApplicationFormData = {
+  fullName?: string;
+  staffId?: string;
+  email?: string;
+  phoneNumber?: string;
+  college?: string;
+  department?: string;
+  educationalTitle?: string;
+  educationalLevel?: string;
+  startDateAtUog?: string;
+  responsibility?: string;
+  familyStatus?: string;
+  spouseName?: string;
+  spouseStaffId?: string;
+  numberOfDependents?: string;
+  hasSpouseAtUog?: boolean;
+  isFemale?: boolean;
+  isDisabled?: boolean;
+  hasChronicIllness?: boolean;
+};
+
+function parseCommitteeApplicationFormData(notes: string | null) {
+  if (!notes) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(notes) as ParsedCommitteeApplicationFormData & {
+      originalNotes?: string;
+    };
+
+    if (typeof parsed.originalNotes === 'string') {
+      return parseCommitteeApplicationFormData(parsed.originalNotes);
+    }
+
+    return {
+      fullName: parsed.fullName,
+      staffId: parsed.staffId,
+      email: parsed.email,
+      phoneNumber: parsed.phoneNumber,
+      college: parsed.college,
+      department: parsed.department,
+      educationalTitle: parsed.educationalTitle,
+      educationalLevel: parsed.educationalLevel,
+      startDateAtUog: parsed.startDateAtUog,
+      responsibility: parsed.responsibility,
+      familyStatus: parsed.familyStatus,
+      spouseName: parsed.spouseName,
+      spouseStaffId: parsed.spouseStaffId,
+      numberOfDependents: parsed.numberOfDependents,
+      hasSpouseAtUog: parsed.hasSpouseAtUog,
+      isFemale: parsed.isFemale,
+      isDisabled: parsed.isDisabled,
+      hasChronicIllness: parsed.hasChronicIllness,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function mergeCommitteeReviewNotes(
+  existingNotes: string | null,
+  reviewNotes: string | null,
+) {
+  if (!reviewNotes) {
+    return existingNotes;
+  }
+
+  if (!existingNotes) {
+    return JSON.stringify({
+      committeeReviewNotes: reviewNotes,
+    });
+  }
+
+  try {
+    const parsed = JSON.parse(existingNotes) as Record<string, unknown>;
+    return JSON.stringify({
+      ...parsed,
+      committeeReviewNotes: reviewNotes,
+    });
+  } catch {
+    return JSON.stringify({
+      originalNotes: existingNotes,
+      committeeReviewNotes: reviewNotes,
+    });
+  }
+}
+
 export async function listCommitteeApplications(
   query: CommitteeApplicationListQueryDto,
 ) {
@@ -66,6 +154,8 @@ export async function getCommitteeApplicationDetails(applicationIdInput: string)
   if (!application) {
     throw new AppError('Application not found', 404, 'APPLICATION_NOT_FOUND');
   }
+
+  const formData = parseCommitteeApplicationFormData(application.notes);
 
   console.log('Fetching documents for application:', application.id, 'user:', application.userId);
   let documents = await findLecturerDocumentsByApplicationId(application.id);
@@ -118,6 +208,7 @@ export async function getCommitteeApplicationDetails(applicationIdInput: string)
 
   return {
     ...application,
+    formData,
     ...scoreData,
     documents,
   };
@@ -144,10 +235,12 @@ export async function reviewCommitteeApplication(
     );
   }
 
+  const mergedNotes = mergeCommitteeReviewNotes(existing.notes, input.notes ?? null);
+
   const updated = await markApplicationUnderReview(applicationId, reviewerUserId, {
     complianceIssue: input.complianceIssue,
     complianceNotes: input.complianceNotes,
-    notes: input.notes,
+    notes: mergedNotes,
   });
 
   if (!updated) {

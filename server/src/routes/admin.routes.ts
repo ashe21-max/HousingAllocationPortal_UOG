@@ -30,8 +30,7 @@ import { requireRole } from '../middleware/require-role.js';
 
 const adminRouter = Router();
 
-// Authentication disabled for direct admin access
-// adminRouter.use(authenticate, requireRole('ADMIN'));
+adminRouter.use(authenticate, requireRole('ADMIN'));
 
 // User Management
 adminRouter.post('/users', adminCreateUserController);

@@ -20,6 +20,10 @@ export async function adminCreateUserController(
   next: NextFunction,
 ): Promise<void> {
   try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
     const { name, email, role, department } = req.body;
 
     if (
@@ -70,6 +74,10 @@ export async function adminListUsersController(
   next: NextFunction,
 ): Promise<void> {
   try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
     const users = await getAdminUsers(req.query);
     res.status(200).json(users);
   } catch (error) {
@@ -83,6 +91,10 @@ export async function adminGetUserController(
   next: NextFunction,
 ): Promise<void> {
   try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
     const user = await getAdminUserById(req.params.id);
     res.status(200).json(user);
   } catch (error) {
@@ -96,7 +108,10 @@ export async function adminUpdateUserController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    // Authentication disabled for direct admin access
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
     const updated = await editAdminUser(req.params.id, req.body);
     res.status(200).json(updated);
   } catch (error) {
@@ -110,12 +125,15 @@ export async function adminSetUserStatusController(
   next: NextFunction,
 ): Promise<void> {
   try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
     if (typeof req.body.isActive !== 'boolean') {
       throw new AppError('isActive must be boolean', 400, 'VALIDATION_ERROR');
     }
 
-    // Skip authentication check for direct activation/deactivation
-    const updated = await setAdminUserStatus("", req.params.id, {
+    const updated = await setAdminUserStatus(req.user.userId, req.params.id, {
       isActive: req.body.isActive,
     });
     res.status(200).json(updated);
@@ -130,8 +148,11 @@ export async function adminDeleteUserController(
   next: NextFunction,
 ): Promise<void> {
   try {
-    // Authentication disabled for direct admin access
-    const deleted = await deleteAdminUser("", req.params.id);
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+
+    const deleted = await deleteAdminUser(req.user.userId, req.params.id);
     res.status(200).json({ message: 'User deleted successfully', user: deleted });
   } catch (error) {
     next(error);

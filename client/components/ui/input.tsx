@@ -79,7 +79,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             value={props.value || ''}
             onChange={props.onChange}
             className={cn(
-              'w-full border rounded-[var(--radius-lg)] transition-all duration-[var(--transition-normal)]',
+              'w-full border rounded-[var(--radius-lg)] text-[var(--foreground)] caret-[var(--foreground)] transition-all duration-[var(--transition-normal)]',
               'focus:outline-none focus:ring-2 focus:ring-offset-0',
               'placeholder:text-[var(--foreground-tertiary)]',
               'disabled:opacity-50 disabled:cursor-not-allowed',

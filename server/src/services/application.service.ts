@@ -32,6 +32,81 @@ import {
 import { calculateApplicationScore } from './scoring/calculate-application-score.js';
 import { mapCriteriaToNumericInput } from './scoring/map-criteria-to-numeric-input.js';
 
+type ParsedApplicationFormData = {
+  fullName?: string;
+  staffId?: string;
+  email?: string;
+  phoneNumber?: string;
+  college?: string;
+  department?: string;
+  educationalTitle?: string;
+  educationalLevel?: string;
+  startDateAtUog?: string;
+  otherServiceInstitution?: string;
+  otherServiceDuration?: string;
+  researchInstitution?: string;
+  researchDuration?: string;
+  teachingInstitution?: string;
+  teachingDuration?: string;
+  responsibility?: string;
+  familyStatus?: string;
+  spouseName?: string;
+  spouseStaffId?: string;
+  numberOfDependents?: string;
+  hasSpouseAtUog?: boolean;
+  isFemale?: boolean;
+  isDisabled?: boolean;
+  hasChronicIllness?: boolean;
+};
+
+function parseApplicationFormData(notes: string | null): ParsedApplicationFormData | null {
+  if (!notes) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(notes) as ParsedApplicationFormData & {
+      originalNotes?: string;
+      score?: unknown;
+      submittedAt?: string;
+    };
+
+    if (typeof parsed.originalNotes === 'string') {
+      return parseApplicationFormData(parsed.originalNotes);
+    }
+
+    return {
+      fullName: parsed.fullName,
+      staffId: parsed.staffId,
+      email: parsed.email,
+      phoneNumber: parsed.phoneNumber,
+      college: parsed.college,
+      department: parsed.department,
+      educationalTitle: parsed.educationalTitle,
+      educationalLevel: parsed.educationalLevel,
+      startDateAtUog: parsed.startDateAtUog,
+      otherServiceInstitution: parsed.otherServiceInstitution,
+      otherServiceDuration: parsed.otherServiceDuration,
+      researchInstitution: parsed.researchInstitution,
+      researchDuration: parsed.researchDuration,
+      teachingInstitution: parsed.teachingInstitution,
+      teachingDuration: parsed.teachingDuration,
+      responsibility: parsed.responsibility,
+      familyStatus: parsed.familyStatus,
+      spouseName: parsed.spouseName,
+      spouseStaffId: parsed.spouseStaffId,
+      numberOfDependents: parsed.numberOfDependents,
+      hasSpouseAtUog: parsed.hasSpouseAtUog,
+      isFemale: parsed.isFemale,
+      isDisabled: parsed.isDisabled,
+      hasChronicIllness: parsed.hasChronicIllness,
+    };
+  } catch (error) {
+    console.log('Could not parse application form data from notes:', error);
+    return null;
+  }
+}
+
 export async function saveMyApplicationDraft(
   userId: string,
   input: SaveApplicationDraftDto,
@@ -292,6 +367,8 @@ export async function getMyApplicationDetails(userId: string, applicationIdInput
     throw new AppError('Application not found', 404, 'APPLICATION_NOT_FOUND');
   }
 
+  const formData = parseApplicationFormData(application.notes);
+
   // Fetch documents
   let documents = await findLecturerDocumentsByApplicationId(application.id);
   
@@ -369,6 +446,7 @@ export async function getMyApplicationDetails(userId: string, applicationIdInput
 
   return {
     ...application,
+    formData,
     ...scoreData,
     documents,
   };

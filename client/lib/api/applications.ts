@@ -41,6 +41,48 @@ export type MyApplicationRow = ApplicationRow & {
   attachedScoreFinal: number | null;
 };
 
+export type ApplicationFormDataSnapshot = {
+  fullName?: string;
+  staffId?: string;
+  email?: string;
+  phoneNumber?: string;
+  college?: string;
+  department?: string;
+  educationalTitle?: string;
+  educationalLevel?: string;
+  startDateAtUog?: string;
+  otherServiceInstitution?: string;
+  otherServiceDuration?: string;
+  researchInstitution?: string;
+  researchDuration?: string;
+  teachingInstitution?: string;
+  teachingDuration?: string;
+  responsibility?: string;
+  familyStatus?: string;
+  spouseName?: string;
+  spouseStaffId?: string;
+  numberOfDependents?: string;
+  hasSpouseAtUog?: boolean;
+  isFemale?: boolean;
+  isDisabled?: boolean;
+  hasChronicIllness?: boolean;
+};
+
+export type ApplicationDocumentRow = {
+  id: string;
+  originalFileName: string;
+  purpose: string;
+};
+
+export type MyApplicationDetailsResponse = ApplicationRow & {
+  formData: ApplicationFormDataSnapshot | null;
+  scoreBreakdown: unknown;
+  scoreBaseTotal: number | null;
+  scoreBonusTotal: number | null;
+  scoreFinal: number | null;
+  documents: ApplicationDocumentRow[];
+};
+
 export type ApplicationRoundOption = {
   id: string;
   name: string;
@@ -100,7 +142,7 @@ export async function submitApplication(applicationId: string) {
 }
 
 export async function getMyApplicationDetails(applicationId: string) {
-  return apiRequest<any>(`/applications/${applicationId}/details`, {
+  return apiRequest<MyApplicationDetailsResponse>(`/applications/${applicationId}/details`, {
     method: "GET",
   });
 }

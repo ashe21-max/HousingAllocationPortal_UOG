@@ -7,10 +7,10 @@ export interface AllocationReport {
   roundStatus: string;
   committeeRankingStatus: string;
   allocationCount: string;
-  reportData: any;
+  reportData: unknown;
   sentByUserId: string;
   sentAt: string;
-  status: string;
+  status: "PENDING" | "RESOLVED" | "REJECTED" | string;
   adminNotes?: string;
   reviewedAt?: string;
   reviewedByUserId?: string;
@@ -23,7 +23,7 @@ export async function getAllocationReports() {
 
 export async function updateAllocationReportStatus(
   id: string,
-  status: string,
+  status: "PENDING" | "RESOLVED" | "REJECTED" | string,
   adminNotes?: string
 ) {
   return apiRequest<{ message: string }>(`/admin/reports/${id}/status`, {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Eye, FileText, User, GraduationCap, Award } from "lucide-react";
 
@@ -22,6 +22,59 @@ import {
 import { getOfficerManagedRounds } from "@/lib/api/officer";
 
 type StatusFilter = "" | CommitteeApplicationStatus;
+
+type ScoreBreakdownRow = {
+  criteria?: string;
+  score?: number | null;
+};
+
+function displayValue(value: string | number | boolean | null | undefined) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  const trimmed = String(value).trim();
+  return trimmed.length > 0 ? trimmed : "-";
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
+}
+
+function formatEnumLabel(value: string | null | undefined) {
+  if (!value) {
+    return "-";
+  }
+
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getCriterionScore(scoreBreakdown: unknown, labels: string[]) {
+  if (!Array.isArray(scoreBreakdown)) {
+    return "-";
+  }
+
+  const rows = scoreBreakdown as ScoreBreakdownRow[];
+  const match = rows.find((row) => {
+    const criteria = row.criteria?.trim().toLowerCase();
+    return criteria ? labels.some((label) => criteria === label.toLowerCase()) : false;
+  });
+
+  return typeof match?.score === "number" ? String(match.score) : "-";
+}
 
 export function CommitteeReviewWorkspace() {
   const queryClient = useQueryClient();
@@ -44,17 +97,7 @@ export function CommitteeReviewWorkspace() {
 
   const roundsQuery = useQuery({
     queryKey: ["committee-rounds"],
-    queryFn: async () => {
-      // Fetch all rounds like lecturer application page
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api"}/applications/options`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch rounds");
-      }
-      const data = await response.json();
-      return data.rounds || [];
-    },
+    queryFn: getOfficerManagedRounds,
   });
 
   const detailsQuery = useQuery({
@@ -331,22 +374,22 @@ export function CommitteeReviewWorkspace() {
                           <tbody className="divide-y divide-gray-200">
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Full Name</td>
-                              <td className="px-4 py-3 text-gray-900">{detailsQuery.data.lecturerName ?? "ALEX ALEBEL"}</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.fullName ?? detailsQuery.data.lecturerName)}</td>
                               <td className="px-4 py-3 text-gray-600">-</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Staff ID</td>
-                              <td className="px-4 py-3 text-gray-900">{detailsQuery.data.userId}</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.staffId ?? detailsQuery.data.userId)}</td>
                               <td className="px-4 py-3 text-gray-600">-</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Email</td>
-                              <td className="px-4 py-3 text-gray-900">{detailsQuery.data.lecturerEmail ?? "amanualazanaw12@gmail.com"}</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.email ?? detailsQuery.data.lecturerEmail)}</td>
                               <td className="px-4 py-3 text-gray-600">-</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Phone Number</td>
-                              <td className="px-4 py-3 text-gray-900">0987654321</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.phoneNumber)}</td>
                               <td className="px-4 py-3 text-gray-600">-</td>
                             </tr>
                           </tbody>
@@ -373,38 +416,38 @@ export function CommitteeReviewWorkspace() {
                           <tbody className="divide-y divide-gray-200">
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">College</td>
-                              <td className="px-4 py-3 text-gray-900">{detailsQuery.data.lecturerDepartment ?? "College of Informatics"}</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.college ?? detailsQuery.data.lecturerDepartment)}</td>
                               <td className="px-4 py-3 text-gray-600">-</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">College / Unit</td>
-                              <td className="px-4 py-3 text-gray-900">{detailsQuery.data.lecturerDepartment ?? "College of Informatics"}</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.department ?? detailsQuery.data.lecturerDepartment)}</td>
                               <td className="px-4 py-3 text-gray-600">-</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Educational Title</td>
-                              <td className="px-4 py-3 text-gray-900">ASSISTANT_LECTURER</td>
-                              <td className="px-4 py-3 text-green-600 font-semibold">25</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.educationalTitle)}</td>
+                              <td className="px-4 py-3 text-green-600 font-semibold">{getCriterionScore(detailsQuery.data.scoreBreakdown, ["Educational Title"])}</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Educational Level</td>
-                              <td className="px-4 py-3 text-gray-900">MSC</td>
-                              <td className="px-4 py-3 text-green-600 font-semibold">3</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.educationalLevel)}</td>
+                              <td className="px-4 py-3 text-green-600 font-semibold">{getCriterionScore(detailsQuery.data.scoreBreakdown, ["Educational Level"])}</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Start Date at UOG</td>
-                              <td className="px-4 py-3 text-gray-900">2025-08-04</td>
-                              <td className="px-4 py-3 text-green-600 font-semibold">0</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(formatDate(detailsQuery.data.formData?.startDateAtUog))}</td>
+                              <td className="px-4 py-3 text-green-600 font-semibold">{getCriterionScore(detailsQuery.data.scoreBreakdown, ["Service Years"])}</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Responsibility</td>
-                              <td className="px-4 py-3 text-gray-900">VICE_DEAN</td>
-                              <td className="px-4 py-3 text-green-600 font-semibold">9</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(formatEnumLabel(detailsQuery.data.formData?.responsibility))}</td>
+                              <td className="px-4 py-3 text-green-600 font-semibold">{getCriterionScore(detailsQuery.data.scoreBreakdown, ["Responsibility"])}</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Family Status</td>
-                              <td className="px-4 py-3 text-gray-900">SINGLE_WITHOUT_CHILDREN</td>
-                              <td className="px-4 py-3 text-green-600 font-semibold">0</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(formatEnumLabel(detailsQuery.data.formData?.familyStatus))}</td>
+                              <td className="px-4 py-3 text-green-600 font-semibold">{getCriterionScore(detailsQuery.data.scoreBreakdown, ["Family Status"])}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -430,38 +473,38 @@ export function CommitteeReviewWorkspace() {
                           <tbody className="divide-y divide-gray-200">
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Spouse Name</td>
-                              <td className="px-4 py-3 text-gray-900">-</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.spouseName)}</td>
                               <td className="px-4 py-3 text-gray-600">-</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Spouse Staff ID</td>
-                              <td className="px-4 py-3 text-gray-900">-</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.spouseStaffId)}</td>
                               <td className="px-4 py-3 text-gray-600">-</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Number of Dependents</td>
-                              <td className="px-4 py-3 text-gray-900">6</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.numberOfDependents)}</td>
                               <td className="px-4 py-3 text-gray-600">-</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Female</td>
-                              <td className="px-4 py-3 text-gray-900">No</td>
-                              <td className="px-4 py-3 text-gray-600">0</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.isFemale)}</td>
+                              <td className="px-4 py-3 text-gray-600">{getCriterionScore(detailsQuery.data.scoreBreakdown, ["Female Bonus"])}</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Disabled</td>
-                              <td className="px-4 py-3 text-gray-900">No</td>
-                              <td className="px-4 py-3 text-gray-600">0</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.isDisabled)}</td>
+                              <td className="px-4 py-3 text-gray-600">{getCriterionScore(detailsQuery.data.scoreBreakdown, ["Disability Bonus"])}</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Has Chronic Illness</td>
-                              <td className="px-4 py-3 text-gray-900">No</td>
-                              <td className="px-4 py-3 text-gray-600">0</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.hasChronicIllness)}</td>
+                              <td className="px-4 py-3 text-gray-600">{getCriterionScore(detailsQuery.data.scoreBreakdown, ["Chronic Illness Bonus"])}</td>
                             </tr>
                             <tr>
                               <td className="px-4 py-3 font-medium text-gray-700">Spouse at UOG</td>
-                              <td className="px-4 py-3 text-gray-900">No</td>
-                              <td className="px-4 py-3 text-gray-600">0</td>
+                              <td className="px-4 py-3 text-gray-900">{displayValue(detailsQuery.data.formData?.hasSpouseAtUog)}</td>
+                              <td className="px-4 py-3 text-gray-600">{getCriterionScore(detailsQuery.data.scoreBreakdown, ["Spouse Bonus"])}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -531,7 +574,10 @@ export function CommitteeReviewWorkspace() {
                               size="sm"
                               variant="secondary"
                               onClick={() =>
-                                window.open(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api"}/committee/documents/${document.id}/view`, "_blank")
+                                downloadMutation.mutate({
+                                  documentId: document.id,
+                                  fileName: document.originalFileName,
+                                })
                               }
                             >
                               Open

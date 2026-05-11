@@ -8,18 +8,18 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function Badge({ children, className, variant = 'default', ...props }: BadgeProps) {
   const variants = {
-    default: 'bg-primary text-primary-foreground hover:bg-primary/80',
-    secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-    destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/80',
-    outline: 'text-foreground border border-input bg-background hover:bg-accent hover:text-accent-foreground',
-    success: 'bg-green-500 text-white hover:bg-green-600',
-    warning: 'bg-yellow-400 text-black hover:bg-yellow-500',
+    default: 'border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary-dark)]',
+    secondary: 'border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--background-tertiary)]',
+    destructive: 'border-[var(--destructive)] bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--color-red-dark)]',
+    outline: 'border-[var(--input)] bg-[var(--background)] text-[var(--foreground)] hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]',
+    success: 'border-[var(--color-green)] bg-[var(--color-green)] text-white hover:bg-[var(--color-green-dark)]',
+    warning: 'border-[var(--color-yellow)] bg-[var(--color-yellow)] text-white hover:bg-[var(--color-yellow-dark)]',
   };
 
   return (
     <div
       className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:ring-offset-2 focus:ring-offset-[var(--background)]',
         variants[variant],
         className
       )}

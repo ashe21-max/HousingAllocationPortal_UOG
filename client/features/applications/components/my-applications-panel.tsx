@@ -8,16 +8,22 @@ import { CheckCircle, Clock, FileText, Send, Calendar, AlertCircle, Eye, User, G
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
 import {
-  getMyDocuments,
   openMyDocument,
   downloadMyDocument,
 } from "@/lib/api/documents";
 import {
+  type ApplicationFormDataSnapshot,
   getMyApplications,
   submitApplication,
   getMyApplicationDetails,
+  type MyApplicationDetailsResponse,
   type MyApplicationRow,
 } from "@/lib/api/applications";
+
+type ScoreBreakdownRow = {
+  criteria?: string;
+  score?: number;
+};
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -83,11 +89,73 @@ function getStatusIcon(status: string) {
   }
 }
 
+function displayValue(value: string | number | boolean | null | undefined) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  const trimmed = String(value).trim();
+  return trimmed.length > 0 ? trimmed : "-";
+}
+
+function formatEnumLabel(value: string | null | undefined) {
+  if (!value) {
+    return "-";
+  }
+
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function parseApplicationFormDataFromNotes(notes: string | null): ApplicationFormDataSnapshot | null {
+  if (!notes) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(notes) as ApplicationFormDataSnapshot & {
+      originalNotes?: string;
+    };
+
+    if (typeof parsed.originalNotes === "string") {
+      return parseApplicationFormDataFromNotes(parsed.originalNotes);
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function getCriterionScore(
+  scoreBreakdown: unknown,
+  labels: string[],
+) {
+  if (!Array.isArray(scoreBreakdown)) {
+    return "-";
+  }
+
+  const rows = scoreBreakdown as ScoreBreakdownRow[];
+  const match = rows.find((row) => {
+    const criteria = row.criteria?.trim().toLowerCase();
+    return criteria ? labels.some((label) => criteria === label.toLowerCase()) : false;
+  });
+
+  return typeof match?.score === "number" ? String(match.score) : "-";
+}
+
 // Component to display detailed application form data from database
 function ApplicationDetails({ application }: { application: MyApplicationRow }) {
   const [showDetails, setShowDetails] = React.useState(false);
 
-  const detailsQuery = useQuery({
+  const detailsQuery = useQuery<MyApplicationDetailsResponse>({
     queryKey: ["my-application-details", application.id],
     queryFn: () => getMyApplicationDetails(application.id),
     enabled: showDetails,
@@ -109,6 +177,12 @@ function ApplicationDetails({ application }: { application: MyApplicationRow }) 
       toast.error(message);
     },
   });
+
+  const parsedNotesFormData = detailsQuery.data
+    ? parseApplicationFormDataFromNotes(detailsQuery.data.notes)
+    : null;
+  const formData = detailsQuery.data?.formData ?? parsedNotesFormData;
+  const scoreBreakdown = detailsQuery.data?.scoreBreakdown;
 
   return (
     <div className="mt-4 w-full">
@@ -178,22 +252,22 @@ function ApplicationDetails({ application }: { application: MyApplicationRow }) 
                       <tbody className="divide-y divide-gray-200">
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Full Name</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.fullName)}</td>
                           <td className="px-4 py-3 text-gray-600">-</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Staff ID</td>
-                          <td className="px-4 py-3 text-gray-900">{detailsQuery.data.userId}</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.staffId ?? detailsQuery.data.userId)}</td>
                           <td className="px-4 py-3 text-gray-600">-</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Email</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.email)}</td>
                           <td className="px-4 py-3 text-gray-600">-</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Phone Number</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.phoneNumber)}</td>
                           <td className="px-4 py-3 text-gray-600">-</td>
                         </tr>
                       </tbody>
@@ -220,38 +294,38 @@ function ApplicationDetails({ application }: { application: MyApplicationRow }) 
                       <tbody className="divide-y divide-gray-200">
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">College</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.college)}</td>
                           <td className="px-4 py-3 text-gray-600">-</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">College / Unit</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.department)}</td>
                           <td className="px-4 py-3 text-gray-600">-</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Educational Title</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
-                          <td className="px-4 py-3 text-green-600 font-semibold">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.educationalTitle)}</td>
+                          <td className="px-4 py-3 text-green-600 font-semibold">{getCriterionScore(scoreBreakdown, ["Educational Title"])}</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Educational Level</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
-                          <td className="px-4 py-3 text-green-600 font-semibold">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.educationalLevel)}</td>
+                          <td className="px-4 py-3 text-green-600 font-semibold">{getCriterionScore(scoreBreakdown, ["Educational Level"])}</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Start Date at UOG</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
-                          <td className="px-4 py-3 text-green-600 font-semibold">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.startDateAtUog ? formatDate(formData.startDateAtUog) : null)}</td>
+                          <td className="px-4 py-3 text-green-600 font-semibold">{getCriterionScore(scoreBreakdown, ["Service Years"])}</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Responsibility</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
-                          <td className="px-4 py-3 text-green-600 font-semibold">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formatEnumLabel(formData?.responsibility))}</td>
+                          <td className="px-4 py-3 text-green-600 font-semibold">{getCriterionScore(scoreBreakdown, ["Responsibility"])}</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Family Status</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
-                          <td className="px-4 py-3 text-green-600 font-semibold">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formatEnumLabel(formData?.familyStatus))}</td>
+                          <td className="px-4 py-3 text-green-600 font-semibold">{getCriterionScore(scoreBreakdown, ["Family Status"])}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -274,38 +348,38 @@ function ApplicationDetails({ application }: { application: MyApplicationRow }) 
                       <tbody className="divide-y divide-gray-200">
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Spouse Name</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.spouseName)}</td>
                           <td className="px-4 py-3 text-gray-600">-</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Spouse Staff ID</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.spouseStaffId)}</td>
                           <td className="px-4 py-3 text-gray-600">-</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Number of Dependents</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.numberOfDependents)}</td>
                           <td className="px-4 py-3 text-gray-600">-</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Female</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
-                          <td className="px-4 py-3 text-gray-600">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.isFemale)}</td>
+                          <td className="px-4 py-3 text-gray-600">{getCriterionScore(scoreBreakdown, ["Female Bonus"])}</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Disabled</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
-                          <td className="px-4 py-3 text-gray-600">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.isDisabled)}</td>
+                          <td className="px-4 py-3 text-gray-600">{getCriterionScore(scoreBreakdown, ["Disability Bonus"])}</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Has Chronic Illness</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
-                          <td className="px-4 py-3 text-gray-600">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.hasChronicIllness)}</td>
+                          <td className="px-4 py-3 text-gray-600">{getCriterionScore(scoreBreakdown, ["Chronic Illness Bonus"])}</td>
                         </tr>
                         <tr>
                           <td className="px-4 py-3 font-medium text-gray-700">Spouse at UOG</td>
-                          <td className="px-4 py-3 text-gray-900">-</td>
-                          <td className="px-4 py-3 text-gray-600">-</td>
+                          <td className="px-4 py-3 text-gray-900">{displayValue(formData?.hasSpouseAtUog)}</td>
+                          <td className="px-4 py-3 text-gray-600">{getCriterionScore(scoreBreakdown, ["Spouse Bonus"])}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -367,7 +441,7 @@ function ApplicationDetails({ application }: { application: MyApplicationRow }) 
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {detailsQuery.data?.documents?.map((doc: any) => (
+                          {detailsQuery.data?.documents?.map((doc) => (
                             <tr key={doc.id}>
                               <td className="px-4 py-3 font-medium text-gray-700">{doc.originalFileName}</td>
                               <td className="px-4 py-3 text-gray-900">{doc.purpose}</td>

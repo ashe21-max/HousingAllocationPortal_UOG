@@ -19,7 +19,7 @@ import {
   submitRoundPreliminary,
   type CommitteeApplicationStatus,
 } from "@/lib/api/committee";
-import { getOfficerManagedRounds } from "@/lib/api/officer";
+import { getApplicationFormOptions, type ApplicationRoundOption } from "@/lib/api/applications";
 
 type StatusFilter = "" | CommitteeApplicationStatus;
 
@@ -97,8 +97,10 @@ export function CommitteeReviewWorkspace() {
 
   const roundsQuery = useQuery({
     queryKey: ["committee-rounds"],
-    queryFn: getOfficerManagedRounds,
+    queryFn: getApplicationFormOptions,
   });
+
+  const roundList = roundsQuery.data?.rounds ?? [];
 
   const detailsQuery = useQuery({
     queryKey: ["committee-application-details", selectedApplicationId],
@@ -135,7 +137,7 @@ export function CommitteeReviewWorkspace() {
 
   const generateRankingMutation = useMutation({
     mutationFn: (roundId: string) => {
-      const round = roundsQuery.data?.find((r: {id: string; status: string}) => r.id === roundId);
+      const round = roundList.find((r: ApplicationRoundOption) => r.id === roundId);
       if (round?.status !== "OPEN") {
         throw new Error("Only OPEN rounds can generate ranking.");
       }
@@ -157,7 +159,7 @@ export function CommitteeReviewWorkspace() {
 
   const preliminaryMutation = useMutation({
     mutationFn: (roundId: string) => {
-      const round = roundsQuery.data?.find((r: {id: string; status: string}) => r.id === roundId);
+      const round = roundList.find((r: ApplicationRoundOption) => r.id === roundId);
       if (round?.status !== "OPEN") {
         throw new Error("Only OPEN rounds can submit preliminary ranking.");
       }
@@ -177,7 +179,7 @@ export function CommitteeReviewWorkspace() {
 
   const finalMutation = useMutation({
     mutationFn: (roundId: string) => {
-      const round = roundsQuery.data?.find((r: {id: string; status: string}) => r.id === roundId);
+      const round = roundList.find((r: ApplicationRoundOption) => r.id === roundId);
       if (round?.status !== "OPEN") {
         throw new Error("Only OPEN rounds can submit final ranking.");
       }
@@ -221,14 +223,14 @@ export function CommitteeReviewWorkspace() {
   const roundOptions = useMemo(() => {
     return [
       { label: "-- Select round --", value: "" },
-      ...(roundsQuery.data?.map((round: {id: string; name: string; status: string}) => ({
+      ...roundList.map((round: ApplicationRoundOption) => ({
         label: `${round.name} (${round.status})`,
         value: round.id,
-      })) ?? []),
+      })),
     ];
-  }, [roundsQuery.data]);
+  }, [roundList]);
 
-  const selectedRound = roundsQuery.data?.find((r: {id: string}) => r.id === selectedRoundId);
+  const selectedRound = roundList.find((r: ApplicationRoundOption) => r.id === selectedRoundId);
   const canRunRanking = selectedRound?.status === "OPEN";
 
   // Don't auto-select any round - let user choose manually (default stays as "Select round")
@@ -655,7 +657,7 @@ export function CommitteeReviewWorkspace() {
             </h2>
             <div className="w-64">
               <Select
-                label=""
+                label="Application Round*"
                 options={roundOptions}
                 value={selectedRoundId}
                 onChange={(event) => setSelectedRoundId(event.target.value)}

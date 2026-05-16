@@ -1,0 +1,49 @@
+[33m219ccb3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix next.config and ensure TypeScript devDependencies
+[33m8fec972[m PERMANENT FIX: Disable Turbopack on Render, optimize Next.js config, move Tailwind to dependencies
+[33mfbf3467[m Fix next.config for  deployment
+[33m2ded55a[m Fix next.config for  deployment
+[33mb211bdc[m Fix next.config for Vercel deployment
+[33med14cc1[m Configure Next.js static export for Render
+[33m66201b2[m Configure Next.js static export for Render
+[33m1c4ab76[m Fix compiling/build issues
+[33m994f927[m[33m ([m[1;32mcopilot/worktree-2026-05-16T15-30-15[m[33m)[m Preserve lecturer submission data during committee review
+[33m348c0fd[m Parse saved application form data in service
+[33m771c084[m Protect admin routes with admin auth
+[33mebc9d00[m Require auth in admin user controller actions
+[33mc47f61c[m Add shared dashboard overview component
+[33m826dce5[m Add typed committee application form data
+[33mdfe8212[m Add typed application detail responses
+[33m20e2a2b[m Tighten admin report api typings
+[33mc59d06b[m Fix admin support report status actions
+[33me978617[m Fix committee review application detail flow
+[33m1024deb[m Fix lecturer application detail rendering
+[33m0cafde9[m Align tabs component with theme tokens
+[33ma5caad6[m Fix shared input text visibility
+[33m2c290d0[m Align badge component with theme tokens
+[33m1a51466[m Fix global theme and form visibility styles
+[33m1c66fbf[m Update officer dashboard overview page
+[33mbf3f868[m Update lecturer dashboard overview page
+[33m1b49259[m Update committee dashboard overview page
+[33m0516463[m Update admin dashboard overview page
+[33m38631f8[m some ui
+[33m0f7dae6[m add announcement functionality and some UI updates to dashboard
+[33m193bc30[m add announcement functionality and some UI updates to dashboard
+[33m537aace[m save my current work
+[33me482f0f[m update project
+[33m0c07e28[m update full backend and frontend of  project
+[33mcfb46b3[m update: marketing page changes
+[33mf9c0564[m[33m ([m[1;31morigin/my-update[m[33m, [m[1;32mmy-update[m[33m)[m update: fixed backend API and UI
+[33m465b657[m[33m ([m[1;31morigin/my-fix[m[33m, [m[1;31morigin/feature/my-change[m[33m, [m[1;32mmy-fix[m[33m, [m[1;32mfeature/my-change[m[33m)[m some ui and logo css
+[33mc962894[m Delete .github/workflows directory
+[33mcd76bbb[m Create deno.yml
+[33ma3d2a5e[m Update README.md
+[33m83a4925[m Update README.md
+[33m1c96f7f[m[33m ([m[1;31morigin/update-project[m[33m, [m[1;32mupdate-project[m[33m)[m Update lecturer dashboard changes
+[33ma89b285[m setup.md and lecturer dasboard
+[33m5eed1ee[m Update README.md
+[33mc4c16a3[m Update README.md
+[33m9f25938[m Create README.md
+[33m555717f[m ui of the system/dashboard and sidebar/ profile componnet /suport tab in all dashboard
+[33m07b8497[m Add project files
+[33m0ed2f2a[m just run
+[33m07b973a[m Clean start
